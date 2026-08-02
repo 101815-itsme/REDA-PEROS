@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>R2 OTO Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --bg:#F8F8F8; --card:#FFFFFF;
+    --ink:#0B0B0C; --sub:#8E8E93; --faint:#C7C7CC;
+    --line:rgba(60,60,67,.09); --line2:rgba(60,60,67,.05);
+    --red:#D6001C; --red-soft:rgba(214,0,28,.06);
+    --green:#17A673; --green-soft:rgba(23,166,115,.08);
+    --orange:#F59E0B;
+    --r:24px; --r-sm:18px;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 14px 34px -18px rgba(16,24,40,.14);
+    --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+    --ease:cubic-bezier(.32,.72,0,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;
+    background:#DEDEE0; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    min-height:100dvh; padding:24px;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    letter-spacing:-0.01em;
+  }
+  .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+
+  /* ---------- device ---------- */
+  .phone{
+    width:384px; height:832px; max-height:calc(100dvh - 32px);
+    background:var(--bg); border-radius:38px; position:relative;
+    box-shadow:0 0 0 3px #0e0e10, 0 0 0 11px #17171a, 0 34px 70px -20px rgba(0,0,0,.5);
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  .statusbar{
+    height:40px; flex:0 0 40px; display:flex; align-items:center; justify-content:space-between;
+    padding:0 20px 0 24px; font-size:14px; font-weight:600; letter-spacing:0;
+    position:relative; z-index:5;
+  }
+  .statusbar .r{display:flex; align-items:center; gap:6px}
+  .statusbar i{width:15px;height:15px;stroke-width:2.4}
+  .punch{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:11px;height:11px;background:#000;border-radius:50%;z-index:6;box-shadow:0 0 0 1.5px rgba(255,255,255,.04)}
+  .gesture{flex:0 0 22px;display:flex;align-items:center;justify-content:center;background:rgba(248,248,248,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+  .gesture .bar{width:128px;height:5px;border-radius:100px;background:#0b0b0c;opacity:.85}
+
+  .screen{flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; position:relative}
+  .screen::-webkit-scrollbar{display:none}
+  .page{display:none; padding:6px 20px 120px; animation:fade .35s var(--ease)}
+  .page.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* ---------- header ---------- */
+  .head{display:flex; align-items:center; gap:13px; padding:12px 2px 22px}
+  .logo{
+    width:44px;height:44px;border-radius:13px;flex:0 0 44px;
+    background:var(--ink); color:#fff; display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:19px;letter-spacing:-.02em;
+    box-shadow:var(--shadow-sm);
+  }
+  .logo b{color:var(--red)}
+  .logo sup{font-size:11px;top:-.5em}
+  .head .hi{font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+  .head .date{font-size:13.5px;color:var(--sub);font-weight:450;margin-top:3px}
+  .head .avatar{margin-left:auto;width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center}
+  .head .avatar i{width:19px;height:19px;color:var(--sub);stroke-width:1.8}
+
+  /* ---------- cards ---------- */
+  .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow)}
+  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+
+  .hero{padding:26px 24px 8px;overflow:hidden;position:relative;margin-bottom:16px}
+  .hero .lbl{font-size:14px;color:var(--sub);font-weight:500;display:flex;align-items:center;gap:6px}
+  .hero .lbl i{width:15px;height:15px;stroke-width:1.9}
+  .hero .bal{font-size:44px;font-weight:700;letter-spacing:-.035em;margin-top:10px;line-height:1}
+  .hero .bal .cur{font-size:20px;font-weight:600;color:var(--faint);margin-left:6px;letter-spacing:-.02em}
+  .trend{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:13.5px;font-weight:600;color:var(--green);background:var(--green-soft);padding:5px 10px;border-radius:100px}
+  .trend i{width:14px;height:14px;stroke-width:2.4}
+  .spark{margin:8px -24px -8px;height:96px;display:block;width:calc(100% + 48px)}
+
+  .mini-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:16px}
+  .mini{padding:16px 15px;border-radius:var(--r-sm)}
+  .mini .t{font-size:11.5px;color:var(--sub);font-weight:500;letter-spacing:.01em;line-height:1.25;height:29px;display:flex;align-items:flex-start}
+  .mini .v{font-size:17.5px;font-weight:700;letter-spacing:-.03em;margin-top:6px}
+  .mini .u{font-size:11px;color:var(--faint);font-weight:600;margin-left:2px}
+  .mini .v.pos{color:var(--green)}
+  .mini .dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+  .mini .dot i{width:15px;height:15px;stroke-width:1.9}
+
+  .pay{padding:20px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
+  .pay .ico{width:46px;height:46px;border-radius:14px;background:var(--red-soft);display:flex;align-items:center;justify-content:center;flex:0 0 46px}
+  .pay .ico i{width:22px;height:22px;color:var(--red);stroke-width:1.8}
+  .pay .lbl{font-size:14.5px;font-weight:600}
+  .pay .meta{font-size:13px;color:var(--sub);margin-top:3px;font-weight:450}
+  .pay .amt{margin-left:auto;text-align:right}
+  .pay .amt .n{font-size:18px;font-weight:700;letter-spacing:-.03em}
+  .pay .amt .c{font-size:12px;color:var(--sub);font-weight:600}
+
+  .cta{width:100%;border:none;background:var(--ink);color:#fff;font-family:inherit;
+    font-size:15.5px;font-weight:600;letter-spacing:-.01em;padding:17px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
+    transition:transform .2s var(--ease),opacity .2s var(--ease)}
+  .cta:active{transform:scale(.975);opacity:.9}
+  .cta i{width:17px;height:17px;stroke-width:2.2}
+
+  /* ---------- activités ---------- */
+  .seg{display:flex;background:#EFEFF0;border-radius:12px;padding:3px;position:relative;margin:6px 0 20px}
+  .seg .ind{position:absolute;top:3px;bottom:3px;width:calc((100% - 6px)/3);left:3px;background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.09);transition:transform .28s var(--ease)}
+  .seg button{flex:1;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--sub);padding:8px 0;position:relative;z-index:2;cursor:pointer;transition:color .25s var(--ease);letter-spacing:-.01em}
+  .seg button.on{color:var(--ink)}
+
+  .swipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:0 20px;gap:0;scroll-behavior:smooth}
+  .swipe::-webkit-scrollbar{display:none}
+  .panel{flex:0 0 100%;scroll-snap-align:start;padding-right:0}
+  .panel .inner{padding-right:20px;margin-right:-20px}
+  .panel .wrap{padding-right:20px}
+
+  .result{padding:24px 24px 10px;margin-bottom:14px;position:relative;overflow:hidden}
+  .result .lbl{font-size:14px;color:var(--sub);font-weight:500}
+  .result .big{font-size:38px;font-weight:700;letter-spacing:-.035em;margin-top:8px;line-height:1}
+  .result .big .cur{font-size:18px;font-weight:600;color:var(--faint);margin-left:5px}
+  .result .spark2{margin:6px -24px -10px;height:80px;width:calc(100% + 48px);display:block}
+
+  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;margin-bottom:18px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px 6px}
+  .stats .s{text-align:center;position:relative}
+  .stats .s+.s::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--line)}
+  .stats .k{font-size:12px;color:var(--sub);font-weight:500}
+  .stats .val{font-size:16px;font-weight:700;letter-spacing:-.03em;margin-top:7px}
+  .stats .val.g{color:var(--green)}
+  .stats .val.r{color:var(--ink)}
+
+  .sect-t{font-size:13px;font-weight:600;color:var(--sub);letter-spacing:.02em;text-transform:uppercase;margin:0 4px 12px}
+  .ops{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+  .op{display:flex;align-items:center;gap:14px;padding:15px 18px;position:relative}
+  .op+.op::before{content:"";position:absolute;left:64px;right:0;top:0;height:1px;background:var(--line2)}
+  .op .oi{width:38px;height:38px;border-radius:11px;background:#F5F5F7;display:flex;align-items:center;justify-content:center;flex:0 0 38px}
+  .op .oi i{width:18px;height:18px;color:#636366;stroke-width:1.8}
+  .op .ot{font-size:14.5px;font-weight:550;letter-spacing:-.01em}
+  .op .od{font-size:12.5px;color:var(--sub);margin-top:2px;font-weight:450}
+  .op .oa{margin-left:auto;font-size:15px;font-weight:650;letter-spacing:-.02em;white-space:nowrap}
+  .op .oa.in{color:var(--green)}
+
+  /* ---------- paiements ---------- */
+  .ph{padding:14px 2px 20px}
+  .ph h1{font-size:28px;font-weight:700;letter-spacing:-.03em}
+  .ph p{font-size:14px;color:var(--sub);margin-top:5px;font-weight:450}
+  .pcard{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:12px;position:relative;overflow:hidden;transition:transform .2s var(--ease)}
+  .pcard:active{transform:scale(.99)}
+  .pcard.soon{background:linear-gradient(180deg,rgba(214,0,28,.035),rgba(214,0,28,.015))}
+  .pcard.soon::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red)}
+  .pcard .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .pcard .sup{font-size:16px;font-weight:650;letter-spacing:-.02em}
+  .pcard .amt{font-size:18px;font-weight:700;letter-spacing:-.03em;white-space:nowrap}
+  .pcard .mid{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:13px;color:var(--sub);font-weight:450}
+  .pcard .mid i{width:14px;height:14px;stroke-width:1.8}
+  .pcard .mid .sep{width:3px;height:3px;border-radius:50%;background:var(--faint)}
+  .pcard .foot{display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:13px;border-top:1px solid var(--line2)}
+  .pcard .due{font-size:13px;font-weight:600;color:var(--ink)}
+  .pcard.soon .due{color:var(--red)}
+  .pcard.done .due{color:var(--sub);font-weight:500}
+  .status{font-size:12px;font-weight:600;padding:4px 11px;border-radius:100px}
+  .status.s-soon{color:var(--red);background:var(--red-soft)}
+  .status.s-up{color:#636366;background:#F0F0F2}
+  .status.s-done{color:var(--green);background:var(--green-soft);display:inline-flex;align-items:center;gap:4px}
+  .status.s-done i{width:12px;height:12px;stroke-width:2.6}
+
+  /* ---------- bottom nav ---------- */
+  .nav{
+    flex:0 0 72px;height:72px;display:flex;padding:10px 30px 12px;
+    background:rgba(248,248,248,.82);backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:1px solid var(--line);position:relative;z-index:10;
+  }
+  .nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--faint);transition:color .2s var(--ease)}
+  .nav button i{width:24px;height:24px;stroke-width:1.9;transition:transform .2s var(--ease)}
+  .nav button span{font-size:10.5px;font-weight:550;letter-spacing:-.01em}
+  .nav button.on{color:var(--red)}
+  .nav button:active i{transform:scale(.88)}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="punch"></div>
+  <div class="statusbar num">
+    <span>9:41</span>
+    <span class="r"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><i data-lucide="battery-medium"></i></span>
+  </div>
+
+  <div class="screen" id="screen">
+
+    <!-- ================= DASHBOARD ================= -->
+    <section class="page active" id="p-dash">
+      <div class="head">
+        <div class="logo"><span>R<sup>2</sup></span></div>
+        <div>
+          <div class="hi">Bonjour Sofiane</div>
+          <div class="date">Aujourd'hui&nbsp;: 2 août 2026</div>
+        </div>
+        <div class="avatar"><i data-lucide="user"></i></div>
+      </div>
+
+      <div class="card hero reveal">
+        <div class="lbl"><i data-lucide="wallet"></i>Trésorerie disponible</div>
+        <div class="bal"><span class="num cu" data-to="58450">0</span><span class="cur">DH</span></div>
+        <div class="trend"><i data-lucide="trending-up"></i>+4.2% ce mois</div>
+        <svg class="spark" viewBox="0 0 340 96" preserveAspectRatio="none">
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#17A673" stop-opacity=".16"/>
+            <stop offset="1" stop-color="#17A673" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path class="area" d="M0,70 L28,64 L56,66 L84,52 L112,56 L140,44 L168,48 L196,34 L224,40 L252,26 L280,30 L308,18 L340,22 L340,96 L0,96 Z" fill="url(#g1)" opacity="0"/>
+          <path class="line" d="M0,70 L28,64 L56,66 L84,52 L112,56 L140,44 L168,48 L196,34 L224,40 L252,26 L280,30 L308,18 L340,22" fill="none" stroke="#17A673" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <div class="mini-row">
+        <div class="card mini reveal" style="transition-delay:.05s">
+          <div class="dot" style="background:var(--green-soft)"><i data-lucide="store" style="color:var(--green)"></i></div>
+          <div class="t">Gain R2 OTO</div>
+          <div class="v pos"><span class="num cu" data-to="28450">0</span></div>
+        </div>
+        <div class="card mini reveal" style="transition-delay:.1s">
+          <div class="dot" style="background:#F0F0F2"><i data-lucide="landmark"></i></div>
+          <div class="t">Marchés</div>
+          <div class="v"><span class="num cu" data-to="18250">0</span></div>
+        </div>
+        <div class="card mini reveal" style="transition-delay:.15s">
+          <div class="dot" style="background:#F0F0F2"><i data-lucide="user-round"></i></div>
+          <div class="t">Personnel</div>
+          <div class="v"><span class="num cu" data-to="-6240">0</span></div>
+        </div>
+      </div>
+
+      <div class="card pay reveal" style="transition-delay:.2s">
+        <div class="ico"><i data-lucide="alert-circle"></i></div>
+        <div>
+          <div class="lbl">Paiements à venir</div>
+          <div class="meta">4 chèques ce mois</div>
+        </div>
+        <div class="amt">
+          <div class="n num"><span class="cu" data-to="126700">0</span></div>
+          <div class="c">DH</div>
+        </div>
+      </div>
+
+      <button class="cta" onclick="go('pay')">Voir les détails<i data-lucide="arrow-right"></i></button>
+    </section>
+
+    <!-- ================= ACTIVITÉS ================= -->
+    <section class="page" id="p-act">
+      <div class="head">
+        <div>
+          <div class="hi" style="font-size:28px;font-weight:700;letter-spacing:-.03em">Activités</div>
+          <div class="date" style="margin-top:6px">Août 2026</div>
+        </div>
+      </div>
+
+      <div class="seg" id="seg">
+        <div class="ind"></div>
+        <button class="on" data-i="0">R2 OTO</button>
+        <button data-i="1">Marchés</button>
+        <button data-i="2">Personnel</button>
+      </div>
+
+      <div class="swipe" id="swipe">
+        <!-- panel template filled by JS -->
+      </div>
+    </section>
+
+    <!-- ================= PAIEMENTS ================= -->
+    <section class="page" id="p-pay">
+      <div class="ph">
+        <h1>Paiements</h1>
+        <p>Chèques et échéances fournisseurs</p>
+      </div>
+      <div id="paylist"></div>
+    </section>
+
+  </div>
+
+  <div class="nav">
+    <button class="on" data-nav="dash" onclick="go('dash')"><i data-lucide="layout-grid"></i><span>Dashboard</span></button>
+    <button data-nav="act" onclick="go('act')"><i data-lucide="bar-chart-3"></i><span>Activités</span></button>
+    <button data-nav="pay" onclick="go('pay')"><i data-lucide="credit-card"></i><span>Paiements</span></button>
+  </div>
+  <div class="gesture"><div class="bar"></div></div>
+</div>
+
+<script>
+const fmt = n => Math.round(n).toLocaleString('fr-FR').replace(/\s/g,'\u202F');
+
+/* ---- data ---- */
+const ACT = [
+  { key:'R2 OTO', result:28450, rec:142300, dep:113850,
+    spark:"M0,58 L34,50 L68,54 L102,40 L136,46 L170,32 L204,38 L238,26 L272,30 L306,18 L340,24",
+    ops:[
+      {i:'shopping-bag', t:'Vente comptoir — plaquettes', d:"Aujourd'hui", a:'+3\u202F200', in:true},
+      {i:'truck', t:'Achat marchandise — Denso', d:'1 août', a:'−18\u202F400'},
+      {i:'shopping-bag', t:'Vente comptoir — filtres', d:'1 août', a:'+1\u202F750', in:true},
+      {i:'home', t:'Loyer du local', d:'31 juil', a:'−4\u202F500'},
+      {i:'users', t:'Salaire — Youssef', d:'30 juil', a:'−5\u202F200'},
+    ]},
+  { key:'Marchés', result:18250, rec:210000, dep:191750,
+    spark:"M0,60 L34,58 L68,44 L102,48 L136,34 L170,40 L204,28 L238,32 L272,22 L306,26 L340,16",
+    ops:[
+      {i:'banknote', t:'Situation n°1 encaissée', d:'28 juil', a:'+210\u202F000', in:true},
+      {i:'settings', t:'Pompe immergée — Douar Essikh', d:'27 juil', a:'−42\u202F000'},
+      {i:'zap', t:'Armoire de commande', d:'24 juil', a:'−18\u202F700'},
+      {i:'hard-hat', t:'Main d\'œuvre — station', d:'22 juil', a:'−22\u202F000'},
+      {i:'cable', t:'Câblage électrique', d:'20 juil', a:'−15\u202F300'},
+    ]},
+  { key:'Personnel', result:-6240, rec:0, dep:6240,
+    spark:"M0,30 L34,34 L68,28 L102,40 L136,36 L170,48 L204,44 L238,54 L272,50 L306,60 L340,58",
+    ops:[
+      {i:'home', t:'Loyer appartement', d:'1 août', a:'−3\u202F500'},
+      {i:'shopping-cart', t:'Alimentation', d:'31 juil', a:'−1\u202F240'},
+      {i:'graduation-cap', t:'École des enfants', d:'29 juil', a:'−880'},
+      {i:'fuel', t:'Carburant', d:'28 juil', a:'−620'},
+    ]},
+];
+
+const PAYS = [
+  {sup:'Denso Distribution', amt:'42\u202F300', chq:'4471203', due:'5 août 2026', st:'soon'},
+  {sup:'Bosch Auto Parts', amt:'31\u202F500', chq:'4471198', due:'9 août 2026', st:'soon'},
+  {sup:'Valeo Maroc', amt:'28\u202F900', chq:'4471210', due:'16 août 2026', st:'up'},
+  {sup:'Sofima Maroc', amt:'24\u202F000', chq:'4471215', due:'24 août 2026', st:'up'},
+  {sup:'NGK Maroc', amt:'9\u202F800', chq:'4471221', due:'12 sept 2026', st:'up'},
+  {sup:'Filtres Purflux', amt:'12\u202F400', chq:'4471180', due:'28 juil 2026', st:'done'},
+];
+const STLBL = {soon:'Échéance proche', up:'À venir', done:'Réglé'};
+
+/* ---- build activités ---- */
+const swipe = document.getElementById('swipe');
+ACT.forEach((a,idx)=>{
+  const sign = a.result<0 ? '−' : '';
+  const val = fmt(Math.abs(a.result));
+  const stroke = a.result<0 ? '#8E8E93' : '#17A673';
+  const gid = 'ga'+idx;
+  const ops = a.ops.map(o=>`
+    <div class="op">
+      <div class="oi"><i data-lucide="${o.i}"></i></div>
+      <div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div>
+      <div class="oa ${o.in?'in':''} num">${o.a}</div>
+    </div>`).join('');
+  swipe.insertAdjacentHTML('beforeend', `
+    <div class="panel"><div class="wrap">
+      <div class="card result reveal">
+        <div class="lbl">Résultat du mois</div>
+        <div class="big num">${sign}<span>${val}</span><span class="cur">DH</span></div>
+        <svg class="spark2" viewBox="0 0 340 80" preserveAspectRatio="none">
+          <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="${stroke}" stop-opacity=".14"/>
+            <stop offset="1" stop-color="${stroke}" stop-opacity="0"/>
+          </linearGradient></defs>
+          <path class="area" d="${a.spark} L340,80 L0,80 Z" fill="url(#${gid})" opacity="0"/>
+          <path class="line" d="${a.spark}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="stats reveal" style="transition-delay:.05s">
+        <div class="s"><div class="k">Recettes</div><div class="val g num">${fmt(a.rec)}</div></div>
+        <div class="s"><div class="k">Dépenses</div><div class="val num">${fmt(a.dep)}</div></div>
+        <div class="s"><div class="k">Résultat</div><div class="val ${a.result<0?'':'g'} num">${sign}${val}</div></div>
+      </div>
+      <div class="sect-t">Historique des opérations</div>
+      <div class="ops reveal" style="transition-delay:.1s">${ops}</div>
+    </div></div>`);
+});
+
+/* ---- build paiements ---- */
+const pl = document.getElementById('paylist');
+PAYS.forEach(p=>{
+  const cls = p.st==='soon'?'soon':(p.st==='done'?'done':'');
+  const badge = p.st==='soon'?'<span class="status s-soon">Échéance proche</span>'
+    : p.st==='done'?'<span class="status s-done"><i data-lucide="check"></i>Réglé</span>'
+    : '<span class="status s-up">À venir</span>';
+  pl.insertAdjacentHTML('beforeend', `
+    <div class="pcard ${cls}">
+      <div class="top"><div class="sup">${p.sup}</div><div class="amt num">${p.amt} DH</div></div>
+      <div class="mid"><i data-lucide="file-text"></i>Chèque N° ${p.chq}</div>
+      <div class="foot"><div class="due num">${p.due}</div>${badge}</div>
+    </div>`);
+});
+
+/* ---- navigation ---- */
+function go(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+(name==='dash'?'dash':name==='act'?'act':'pay')).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.nav===name));
+  document.getElementById('screen').scrollTop = 0;
+  requestAnimationFrame(()=>{ runReveal(); if(name==='dash'||name==='act') runCounts(); });
+  if(name==='act') setTimeout(()=>moveSeg(active),50);
+}
+
+/* ---- segmented + swipe ---- */
+const seg = document.getElementById('seg');
+const ind = seg.querySelector('.ind');
+let active = 0;
+function moveSeg(i){
+  ind.style.transform = `translateX(${i*100}%)`;
+  seg.querySelectorAll('button').forEach((b,k)=>b.classList.toggle('on',k===i));
+}
+seg.querySelectorAll('button').forEach(b=>{
+  b.onclick=()=>{ const i=+b.dataset.i; swipe.scrollTo({left:i*swipe.clientWidth,behavior:'smooth'}); };
+});
+let st;
+swipe.addEventListener('scroll',()=>{
+  clearTimeout(st);
+  const i = Math.round(swipe.scrollLeft/swipe.clientWidth);
+  if(i!==active){ active=i; moveSeg(i); }
+  st=setTimeout(runReveal,60);
+});
+
+/* ---- reveal on scroll ---- */
+let io;
+function runReveal(){
+  document.querySelectorAll('.page.active .reveal').forEach(el=>{
+    const r = el.getBoundingClientRect();
+    if(r.top < window.innerHeight - 40) el.classList.add('in');
+  });
+}
+document.getElementById('screen').addEventListener('scroll',runReveal);
+
+/* ---- count up ---- */
+function countTo(el){
+  const to = +el.dataset.to, dur=1000, t0=performance.now();
+  const neg = to<0; const abs=Math.abs(to);
+  function step(t){
+    const p=Math.min((t-t0)/dur,1);
+    const e=1-Math.pow(1-p,4);
+    el.textContent=(neg?'−':'')+fmt(abs*e);
+    if(p<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+function runCounts(){
+  document.querySelectorAll('.page.active .cu').forEach(el=>{
+    if(el.dataset.done) return; el.dataset.done=1; countTo(el);
+  });
+}
+
+/* ---- init ---- */
+window.addEventListener('load',()=>{
+  lucide.createIcons();
+  // draw sparklines
+  document.querySelectorAll('.line').forEach(p=>{
+    const len=p.getTotalLength();
+    p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
+    p.style.transition='stroke-dashoffset 1.4s var(--ease)';
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ p.style.strokeDashoffset=0; }); });
+  });
+  document.querySelectorAll('.area').forEach(a=>{
+    a.style.transition='opacity 1s ease .5s'; requestAnimationFrame(()=>a.style.opacity=1);
+  });
+  runReveal(); runCounts(); moveSeg(0);
+});
+</script>
+</body>
+</html>
