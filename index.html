@@ -3,463 +3,609 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>R2 OTO Finance</title>
+<title>R2 OTO — Pilote tes finances</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  :root{
-    --bg:#F8F8F8; --card:#FFFFFF;
-    --ink:#0B0B0C; --sub:#8E8E93; --faint:#C7C7CC;
-    --line:rgba(60,60,67,.09); --line2:rgba(60,60,67,.05);
-    --red:#D6001C; --red-soft:rgba(214,0,28,.06);
-    --green:#17A673; --green-soft:rgba(23,166,115,.08);
-    --orange:#F59E0B;
-    --r:24px; --r-sm:18px;
-    --shadow:0 1px 2px rgba(16,24,40,.04), 0 14px 34px -18px rgba(16,24,40,.14);
-    --shadow-sm:0 1px 2px rgba(16,24,40,.05);
-    --ease:cubic-bezier(.32,.72,0,1);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
-  body{
-    font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;
-    background:#DEDEE0; color:var(--ink);
-    display:flex; align-items:center; justify-content:center;
-    min-height:100dvh; padding:24px;
-    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-    letter-spacing:-0.01em;
-  }
-  .num{font-variant-numeric:tabular-nums; font-feature-settings:"tnum"}
+:root{
+  --bg:#F4F5F7; --card:#FFFFFF;
+  --ink:#14151C; --sub:#8A8E99; --faint:#B6BAC4;
+  --line:rgba(20,21,28,.07); --line2:rgba(20,21,28,.04);
+  --red:#D6001C; --red-soft:#FCE9EB; --red-soft2:rgba(214,0,28,.06);
+  --green:#12A150; --green-soft:#E6F5EC;
+  --blue:#2563EB; --orange:#F59E0B; --orange-soft:#FEF2E0;
+  --gray:#9AA0AA;
+  --r:20px; --r-sm:16px;
+  --sh:0 1px 2px rgba(20,21,28,.04), 0 10px 24px -14px rgba(20,21,28,.12);
+  --sh-sm:0 1px 3px rgba(20,21,28,.06);
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;
+  background:var(--bg); color:var(--ink);
+  display:flex; justify-content:center; min-height:100dvh;
+  -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
+}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
 
-  /* ---------- device ---------- */
-  .phone{
-    width:384px; height:832px; max-height:calc(100dvh - 32px);
-    background:var(--bg); border-radius:38px; position:relative;
-    box-shadow:0 0 0 3px #0e0e10, 0 0 0 11px #17171a, 0 34px 70px -20px rgba(0,0,0,.5);
-    display:flex; flex-direction:column; overflow:hidden;
-  }
-  .statusbar{
-    height:40px; flex:0 0 40px; display:flex; align-items:center; justify-content:space-between;
-    padding:0 20px 0 24px; font-size:14px; font-weight:600; letter-spacing:0;
-    position:relative; z-index:5;
-  }
-  .statusbar .r{display:flex; align-items:center; gap:6px}
-  .statusbar i{width:15px;height:15px;stroke-width:2.4}
-  .punch{position:absolute;top:13px;left:50%;transform:translateX(-50%);width:11px;height:11px;background:#000;border-radius:50%;z-index:6;box-shadow:0 0 0 1.5px rgba(255,255,255,.04)}
-  .gesture{flex:0 0 22px;display:flex;align-items:center;justify-content:center;background:rgba(248,248,248,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-  .gesture .bar{width:128px;height:5px;border-radius:100px;background:#0b0b0c;opacity:.85}
+.app{
+  width:100%; max-width:440px; min-height:100dvh; background:var(--bg);
+  display:flex; flex-direction:column; position:relative; overflow:hidden;
+  box-shadow:0 0 60px rgba(0,0,0,.05);
+}
+.body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.body::-webkit-scrollbar{display:none}
+.screen{display:none;padding:0 16px 110px;animation:fade .35s var(--ease)}
+.screen.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-  .screen{flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; position:relative}
-  .screen::-webkit-scrollbar{display:none}
-  .page{display:none; padding:6px 20px 120px; animation:fade .35s var(--ease)}
-  .page.active{display:block}
-  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* ---------- headers ---------- */
+.topbar{display:flex;align-items:center;gap:12px;padding:16px 4px 14px;position:sticky;top:0;background:var(--bg);z-index:8}
+.iconbtn{width:40px;height:40px;border-radius:12px;background:var(--card);box-shadow:var(--sh-sm);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);flex:0 0 40px}
+.iconbtn i{width:20px;height:20px;stroke-width:1.9}
+.iconbtn.plain{background:none;box-shadow:none}
+.bell{position:relative}
+.bell .badge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.logo{display:flex;flex-direction:column;align-items:center;line-height:1}
+.logo .lt{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.logo .lt .r{color:var(--red)}
+.logo .lt .o{color:var(--ink)}
+.logo .tag{font-size:8.5px;font-weight:600;letter-spacing:.16em;color:var(--sub);margin-top:3px}
+.topbar .title{font-size:17px;font-weight:700;letter-spacing:-.02em;flex:1;text-align:center}
+.topbar .spacer{flex:1}
+.topbar.center{justify-content:space-between}
 
-  /* ---------- header ---------- */
-  .head{display:flex; align-items:center; gap:13px; padding:12px 2px 22px}
-  .logo{
-    width:44px;height:44px;border-radius:13px;flex:0 0 44px;
-    background:var(--ink); color:#fff; display:flex;align-items:center;justify-content:center;
-    font-weight:700;font-size:19px;letter-spacing:-.02em;
-    box-shadow:var(--shadow-sm);
-  }
-  .logo b{color:var(--red)}
-  .logo sup{font-size:11px;top:-.5em}
-  .head .hi{font-size:19px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
-  .head .date{font-size:13.5px;color:var(--sub);font-weight:450;margin-top:3px}
-  .head .avatar{margin-left:auto;width:38px;height:38px;border-radius:50%;background:#fff;box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center}
-  .head .avatar i{width:19px;height:19px;color:var(--sub);stroke-width:1.8}
+.pagehead{display:flex;align-items:flex-end;justify-content:space-between;padding:4px 4px 18px}
+.pagehead h1{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.selector{display:inline-flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--sh-sm);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
+.selector i{width:14px;height:14px;stroke-width:2.2;color:var(--sub)}
 
-  /* ---------- cards ---------- */
-  .card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow)}
-  .reveal{opacity:0;transform:translateY(14px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-  .reveal.in{opacity:1;transform:none}
+/* ---------- cards ---------- */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh)}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
+.reveal.in{opacity:1;transform:none}
+.mb14{margin-bottom:14px}.mb12{margin-bottom:12px}.mb18{margin-bottom:18px}
 
-  .hero{padding:26px 24px 8px;overflow:hidden;position:relative;margin-bottom:16px}
-  .hero .lbl{font-size:14px;color:var(--sub);font-weight:500;display:flex;align-items:center;gap:6px}
-  .hero .lbl i{width:15px;height:15px;stroke-width:1.9}
-  .hero .bal{font-size:44px;font-weight:700;letter-spacing:-.035em;margin-top:10px;line-height:1}
-  .hero .bal .cur{font-size:20px;font-weight:600;color:var(--faint);margin-left:6px;letter-spacing:-.02em}
-  .trend{display:inline-flex;align-items:center;gap:5px;margin-top:12px;font-size:13.5px;font-weight:600;color:var(--green);background:var(--green-soft);padding:5px 10px;border-radius:100px}
-  .trend i{width:14px;height:14px;stroke-width:2.4}
-  .spark{margin:8px -24px -8px;height:96px;display:block;width:calc(100% + 48px)}
+.sect{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 12px}
+.sect .t{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.sect .a{font-size:13px;font-weight:600;color:var(--red);cursor:pointer}
 
-  .mini-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:11px;margin-bottom:16px}
-  .mini{padding:16px 15px;border-radius:var(--r-sm)}
-  .mini .t{font-size:11.5px;color:var(--sub);font-weight:500;letter-spacing:.01em;line-height:1.25;height:29px;display:flex;align-items:flex-start}
-  .mini .v{font-size:17.5px;font-weight:700;letter-spacing:-.03em;margin-top:6px}
-  .mini .u{font-size:11px;color:var(--faint);font-weight:600;margin-left:2px}
-  .mini .v.pos{color:var(--green)}
-  .mini .dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:11px}
-  .mini .dot i{width:15px;height:15px;stroke-width:1.9}
+/* hero black card */
+.hero{background:#141519;border-radius:var(--r);padding:20px 20px 18px;color:#fff;position:relative;overflow:hidden;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.hero .lbl{font-size:13px;color:rgba(255,255,255,.6);font-weight:500}
+.hero .val{font-size:31px;font-weight:800;letter-spacing:-.03em;margin-top:8px;line-height:1}
+.hero .val .c{font-size:15px;font-weight:600;color:rgba(255,255,255,.45);margin-left:4px}
+.hero .delta{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:12.5px;font-weight:700;color:#4ADE80}
+.hero .delta i{width:13px;height:13px;stroke-width:2.6}
+.hero svg{flex:0 0 108px;height:66px;align-self:center}
 
-  .pay{padding:20px 22px;margin-bottom:18px;display:flex;align-items:center;gap:16px}
-  .pay .ico{width:46px;height:46px;border-radius:14px;background:var(--red-soft);display:flex;align-items:center;justify-content:center;flex:0 0 46px}
-  .pay .ico i{width:22px;height:22px;color:var(--red);stroke-width:1.8}
-  .pay .lbl{font-size:14.5px;font-weight:600}
-  .pay .meta{font-size:13px;color:var(--sub);margin-top:3px;font-weight:450}
-  .pay .amt{margin-left:auto;text-align:right}
-  .pay .amt .n{font-size:18px;font-weight:700;letter-spacing:-.03em}
-  .pay .amt .c{font-size:12px;color:var(--sub);font-weight:600}
+/* trio cards */
+.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat{background:var(--card);border-radius:var(--r-sm);box-shadow:var(--sh);padding:13px 12px 14px}
+.stat .k{font-size:11px;color:var(--sub);font-weight:500;line-height:1.25;min-height:26px}
+.stat .v{font-size:16px;font-weight:800;letter-spacing:-.03em;margin-top:4px}
+.stat .u{font-size:10px;font-weight:700;color:var(--faint);margin-left:2px}
+.stat .v.blue{color:var(--blue)} .stat .v.red{color:var(--red)} .stat .v.green{color:var(--green)}
+.stat i{width:16px;height:16px;stroke-width:1.9;color:var(--faint);margin-top:11px;display:block}
 
-  .cta{width:100%;border:none;background:var(--ink);color:#fff;font-family:inherit;
-    font-size:15.5px;font-weight:600;letter-spacing:-.01em;padding:17px;border-radius:16px;
-    display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;
-    transition:transform .2s var(--ease),opacity .2s var(--ease)}
-  .cta:active{transform:scale(.975);opacity:.9}
-  .cta i{width:17px;height:17px;stroke-width:2.2}
+/* alert strip */
+.alert{display:flex;align-items:center;gap:11px;background:var(--red-soft);border-radius:14px;padding:13px 15px;cursor:pointer}
+.alert i.w{width:19px;height:19px;color:var(--red);stroke-width:2;flex:0 0 19px}
+.alert .txt{font-size:13px;font-weight:600;color:#B00018;flex:1;line-height:1.3}
+.alert i.c{width:16px;height:16px;color:var(--red);stroke-width:2.2;opacity:.6}
 
-  /* ---------- activités ---------- */
-  .seg{display:flex;background:#EFEFF0;border-radius:12px;padding:3px;position:relative;margin:6px 0 20px}
-  .seg .ind{position:absolute;top:3px;bottom:3px;width:calc((100% - 6px)/3);left:3px;background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.09);transition:transform .28s var(--ease)}
-  .seg button{flex:1;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--sub);padding:8px 0;position:relative;z-index:2;cursor:pointer;transition:color .25s var(--ease);letter-spacing:-.01em}
-  .seg button.on{color:var(--ink)}
+/* donut block */
+.donutwrap{display:flex;align-items:center;gap:18px;padding:18px 20px}
+.donut{flex:0 0 116px;width:116px;height:116px}
+.legend{flex:1;display:flex;flex-direction:column;gap:11px}
+.legend .row{display:flex;align-items:center;gap:9px;font-size:13px}
+.legend .dot{width:10px;height:10px;border-radius:3px;flex:0 0 10px}
+.legend .nm{color:var(--ink);font-weight:500}
+.legend .am{margin-left:auto;font-weight:700;letter-spacing:-.02em}
+.legend .pc{color:var(--sub);font-weight:600;font-size:12px;width:34px;text-align:right}
 
-  .swipe{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:0 20px;gap:0;scroll-behavior:smooth}
-  .swipe::-webkit-scrollbar{display:none}
-  .panel{flex:0 0 100%;scroll-snap-align:start;padding-right:0}
-  .panel .inner{padding-right:20px;margin-right:-20px}
-  .panel .wrap{padding-right:20px}
+/* list rows */
+.list{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.li{display:flex;align-items:center;gap:13px;padding:14px 16px;position:relative}
+.li+.li::before{content:"";position:absolute;left:55px;right:0;top:0;height:1px;background:var(--line2)}
+.li .ic{width:34px;height:34px;border-radius:10px;background:#F2F3F5;display:flex;align-items:center;justify-content:center;flex:0 0 34px}
+.li .ic i{width:17px;height:17px;color:#5B6070;stroke-width:1.9}
+.li .nm{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.li .dt{font-size:12px;color:var(--sub);margin-top:2px;font-weight:450}
+.li .am{margin-left:auto;font-size:14.5px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.li .am.pos{color:var(--green)} .li .am.neg{color:var(--red)}
 
-  .result{padding:24px 24px 10px;margin-bottom:14px;position:relative;overflow:hidden}
-  .result .lbl{font-size:14px;color:var(--sub);font-weight:500}
-  .result .big{font-size:38px;font-weight:700;letter-spacing:-.035em;margin-top:8px;line-height:1}
-  .result .big .cur{font-size:18px;font-weight:600;color:var(--faint);margin-left:5px}
-  .result .spark2{margin:6px -24px -10px;height:80px;width:calc(100% + 48px);display:block}
+/* quick apercu */
+.quick .li .am{color:var(--ink)}
+.quick .li .am.red{color:var(--red)}
 
-  .stats{display:grid;grid-template-columns:1fr 1fr 1fr;margin-bottom:18px;background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px 6px}
-  .stats .s{text-align:center;position:relative}
-  .stats .s+.s::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:1px;background:var(--line)}
-  .stats .k{font-size:12px;color:var(--sub);font-weight:500}
-  .stats .val{font-size:16px;font-weight:700;letter-spacing:-.03em;margin-top:7px}
-  .stats .val.g{color:var(--green)}
-  .stats .val.r{color:var(--ink)}
+/* ---------- segmented tabs ---------- */
+.tabs{display:flex;gap:22px;padding:2px 6px 0;border-bottom:1px solid var(--line);margin-bottom:16px}
+.tabs button{border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--sub);padding:10px 0 12px;position:relative;cursor:pointer}
+.tabs button.on{color:var(--red)}
+.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;background:var(--red);border-radius:3px}
 
-  .sect-t{font-size:13px;font-weight:600;color:var(--sub);letter-spacing:.02em;text-transform:uppercase;margin:0 4px 12px}
-  .ops{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
-  .op{display:flex;align-items:center;gap:14px;padding:15px 18px;position:relative}
-  .op+.op::before{content:"";position:absolute;left:64px;right:0;top:0;height:1px;background:var(--line2)}
-  .op .oi{width:38px;height:38px;border-radius:11px;background:#F5F5F7;display:flex;align-items:center;justify-content:center;flex:0 0 38px}
-  .op .oi i{width:18px;height:18px;color:#636366;stroke-width:1.8}
-  .op .ot{font-size:14.5px;font-weight:550;letter-spacing:-.01em}
-  .op .od{font-size:12.5px;color:var(--sub);margin-top:2px;font-weight:450}
-  .op .oa{margin-left:auto;font-size:15px;font-weight:650;letter-spacing:-.02em;white-space:nowrap}
-  .op .oa.in{color:var(--green)}
+/* synthese 3col */
+.syn{display:grid;grid-template-columns:1fr 1fr 1fr;padding:18px 8px}
+.syn .c{text-align:center;position:relative}
+.syn .c+.c::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--line)}
+.syn .k{font-size:11.5px;color:var(--sub);font-weight:500;line-height:1.3;min-height:28px;display:flex;align-items:center;justify-content:center}
+.syn .v{font-size:16px;font-weight:800;letter-spacing:-.03em;margin-top:6px}
+.syn .v.green{color:var(--green)} .syn .v.red{color:var(--red)}
+.syn .u{font-size:10px;font-weight:700;color:var(--faint);margin-left:2px}
 
-  /* ---------- paiements ---------- */
-  .ph{padding:14px 2px 20px}
-  .ph h1{font-size:28px;font-weight:700;letter-spacing:-.03em}
-  .ph p{font-size:14px;color:var(--sub);margin-top:5px;font-weight:450}
-  .pcard{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:12px;position:relative;overflow:hidden;transition:transform .2s var(--ease)}
-  .pcard:active{transform:scale(.99)}
-  .pcard.soon{background:linear-gradient(180deg,rgba(214,0,28,.035),rgba(214,0,28,.015))}
-  .pcard.soon::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--red)}
-  .pcard .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-  .pcard .sup{font-size:16px;font-weight:650;letter-spacing:-.02em}
-  .pcard .amt{font-size:18px;font-weight:700;letter-spacing:-.03em;white-space:nowrap}
-  .pcard .mid{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:13px;color:var(--sub);font-weight:450}
-  .pcard .mid i{width:14px;height:14px;stroke-width:1.8}
-  .pcard .mid .sep{width:3px;height:3px;border-radius:50%;background:var(--faint)}
-  .pcard .foot{display:flex;align-items:center;justify-content:space-between;margin-top:13px;padding-top:13px;border-top:1px solid var(--line2)}
-  .pcard .due{font-size:13px;font-weight:600;color:var(--ink)}
-  .pcard.soon .due{color:var(--red)}
-  .pcard.done .due{color:var(--sub);font-weight:500}
-  .status{font-size:12px;font-weight:600;padding:4px 11px;border-radius:100px}
-  .status.s-soon{color:var(--red);background:var(--red-soft)}
-  .status.s-up{color:#636366;background:#F0F0F2}
-  .status.s-done{color:var(--green);background:var(--green-soft);display:inline-flex;align-items:center;gap:4px}
-  .status.s-done i{width:12px;height:12px;stroke-width:2.6}
+/* chart card */
+.chartcard{padding:16px 14px 10px}
+.chartcard .hd{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px}
+.chartcard .hd .t{font-size:14px;font-weight:700}
+.chartcard svg{width:100%;height:auto;display:block}
 
-  /* ---------- bottom nav ---------- */
-  .nav{
-    flex:0 0 72px;height:72px;display:flex;padding:10px 30px 12px;
-    background:rgba(248,248,248,.82);backdrop-filter:saturate(180%) blur(20px);
-    -webkit-backdrop-filter:saturate(180%) blur(20px);
-    border-top:1px solid var(--line);position:relative;z-index:10;
-  }
-  .nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--faint);transition:color .2s var(--ease)}
-  .nav button i{width:24px;height:24px;stroke-width:1.9;transition:transform .2s var(--ease)}
-  .nav button span{font-size:10.5px;font-weight:550;letter-spacing:-.01em}
-  .nav button.on{color:var(--red)}
-  .nav button:active i{transform:scale(.88)}
+/* marchés */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;padding:18px 20px}
+.summary .c .big{font-size:20px;font-weight:800;letter-spacing:-.03em}
+.summary .c .big.green{color:var(--green)}
+.summary .c .u{font-size:11px;font-weight:700;color:var(--faint);margin-left:2px}
+.summary .c .k{font-size:11.5px;color:var(--sub);font-weight:500;margin-top:3px;line-height:1.25}
+.market{padding:18px 18px 16px;margin-bottom:12px}
+.market .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.market .ao{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.market .desc{font-size:12.5px;color:var(--sub);margin-top:4px;font-weight:450}
+.chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap}
+.chip.enc{background:var(--green-soft);color:var(--green)}
+.bar{height:7px;border-radius:5px;background:#EEF0F3;margin:14px 0 4px;overflow:hidden}
+.bar>span{display:block;height:100%;border-radius:5px}
+.bar .pct{}
+.market .pctlbl{text-align:right;font-size:11.5px;font-weight:700;color:var(--sub);margin-bottom:12px}
+.kv{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid var(--line2)}
+.kv:first-of-type{border-top:none}
+.kv .k{color:var(--sub);font-weight:500}
+.kv .v{font-weight:700;letter-spacing:-.02em}
+.kv .v.red{color:var(--red)} .kv .v.green{color:var(--green)}
+
+/* créances */
+.totcard{display:flex;align-items:center;gap:14px;background:var(--red-soft);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
+.totcard .l{flex:1}
+.totcard .k{font-size:11px;font-weight:700;color:#B00018;letter-spacing:.04em}
+.totcard .v{font-size:24px;font-weight:800;letter-spacing:-.03em;color:#B00018;margin-top:4px}
+.totcard .r{text-align:right;display:flex;align-items:center;gap:8px}
+.totcard .r .n{font-size:22px;font-weight:800;color:var(--red)}
+.totcard .r .s{font-size:11px;color:#B00018;font-weight:600;max-width:90px;line-height:1.25;text-align:left}
+.totcard .r i{width:18px;height:18px;color:var(--red)}
+.creance{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:var(--r-sm);box-shadow:var(--sh);padding:15px 16px;margin-bottom:10px}
+.creance .lg{width:38px;height:38px;border-radius:10px;background:#F2F3F5;display:flex;align-items:center;justify-content:center;flex:0 0 38px;font-size:10px;font-weight:800;color:#5B6070;text-align:center;line-height:1.05;padding:3px}
+.creance .mid{flex:1;min-width:0}
+.creance .sup{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+.creance .chq{font-size:12px;color:var(--sub);margin-top:3px;font-weight:450}
+.creance .rt{text-align:right;flex:0 0 auto}
+.creance .amt{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.creance .date{font-size:11.5px;color:var(--sub);margin-top:2px}
+.due{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;margin-top:6px}
+.due.d1{background:var(--red-soft);color:var(--red)}
+.due.d3{background:var(--orange-soft);color:#C2410C}
+.due.d7{background:var(--orange-soft);color:#B45309}
+.due.d12{background:#EEF0F3;color:#5B6070}
+.empty{text-align:center;padding:50px 20px;color:var(--sub)}
+.empty i{width:34px;height:34px;stroke-width:1.6;color:var(--faint)}
+.empty p{font-size:14px;margin-top:12px;font-weight:500}
+
+/* placeholder */
+.ph-screen{text-align:center;padding:80px 30px}
+.ph-screen i{width:46px;height:46px;color:var(--faint);stroke-width:1.5}
+.ph-screen h2{font-size:19px;font-weight:800;margin-top:18px;letter-spacing:-.02em}
+.ph-screen p{font-size:14px;color:var(--sub);margin-top:8px;line-height:1.5}
+
+/* ---------- bottom nav ---------- */
+.nav{flex:0 0 auto;display:flex;padding:9px 8px calc(9px + env(safe-area-inset-bottom));background:rgba(244,245,247,.9);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line)}
+.nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--faint);transition:color .2s var(--ease);padding:4px 0}
+.nav button i{width:23px;height:23px;stroke-width:1.9;transition:transform .2s var(--ease)}
+.nav button span{font-size:10px;font-weight:600;letter-spacing:-.01em}
+.nav button.on{color:var(--red)}
+.nav button:active i{transform:scale(.88)}
+
+/* ---------- drawer ---------- */
+.scrim{position:absolute;inset:0;background:rgba(10,10,12,.5);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s;z-index:20}
+.scrim.open{opacity:1;visibility:visible}
+.drawer{position:absolute;top:0;left:0;bottom:0;width:84%;max-width:340px;background:#141519;color:#fff;transform:translateX(-100%);transition:transform .34s var(--ease);z-index:21;display:flex;flex-direction:column;padding:0 0 20px}
+.drawer.open{transform:none}
+.drawer .dhead{padding:26px 24px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.drawer .dlogo .lt{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--red)}
+.drawer .dlogo .tag{font-size:8.5px;font-weight:600;letter-spacing:.16em;color:rgba(255,255,255,.4);margin-top:4px}
+.drawer .prof{display:flex;align-items:center;gap:13px;padding:20px 24px}
+.drawer .av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#D6001C,#8a0012);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:0 0 46px}
+.drawer .nmm{font-size:16px;font-weight:700}
+.drawer .role{font-size:12.5px;color:rgba(255,255,255,.5);margin-top:2px}
+.drawer .items{flex:1;overflow-y:auto;padding:8px 14px}
+.drawer .items::-webkit-scrollbar{display:none}
+.ditem{display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:12px;cursor:pointer;color:rgba(255,255,255,.82);font-size:14.5px;font-weight:500;transition:background .18s}
+.ditem i{width:20px;height:20px;stroke-width:1.8}
+.ditem:active{background:rgba(255,255,255,.06)}
+.ditem.on{background:rgba(214,0,28,.16);color:var(--red)}
+.ditem.logout{color:rgba(255,255,255,.55);margin-top:6px}
 </style>
 </head>
 <body>
-<div class="phone">
-  <div class="punch"></div>
-  <div class="statusbar num">
-    <span>9:41</span>
-    <span class="r"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><i data-lucide="battery-medium"></i></span>
-  </div>
+<div class="app">
+  <div class="body" id="body">
 
-  <div class="screen" id="screen">
-
-    <!-- ================= DASHBOARD ================= -->
-    <section class="page active" id="p-dash">
-      <div class="head">
-        <div class="logo"><span>R<sup>2</sup></span></div>
-        <div>
-          <div class="hi">Bonjour Sofiane</div>
-          <div class="date">Aujourd'hui&nbsp;: 2 août 2026</div>
-        </div>
-        <div class="avatar"><i data-lucide="user"></i></div>
+    <!-- ============ DASHBOARD ============ -->
+    <section class="screen active" id="s-dashboard">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="logo"><div class="lt"><span class="r">R²</span><span class="o">'OTO</span></div><div class="tag">PILOTE TES FINANCES</div></div>
+        <button class="iconbtn plain bell" onclick="openDrawer()"><i data-lucide="bell"></i><span class="badge">3</span></button>
       </div>
 
-      <div class="card hero reveal">
-        <div class="lbl"><i data-lucide="wallet"></i>Trésorerie disponible</div>
-        <div class="bal"><span class="num cu" data-to="58450">0</span><span class="cur">DH</span></div>
-        <div class="trend"><i data-lucide="trending-up"></i>+4.2% ce mois</div>
-        <svg class="spark" viewBox="0 0 340 96" preserveAspectRatio="none">
-          <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#17A673" stop-opacity=".16"/>
-            <stop offset="1" stop-color="#17A673" stop-opacity="0"/>
-          </linearGradient></defs>
-          <path class="area" d="M0,70 L28,64 L56,66 L84,52 L112,56 L140,44 L168,48 L196,34 L224,40 L252,26 L280,30 L308,18 L340,22 L340,96 L0,96 Z" fill="url(#g1)" opacity="0"/>
-          <path class="line" d="M0,70 L28,64 L56,66 L84,52 L112,56 L140,44 L168,48 L196,34 L224,40 L252,26 L280,30 L308,18 L340,22" fill="none" stroke="#17A673" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <div class="pagehead"><h1>Tableau de bord</h1><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
+
+      <div class="hero reveal mb14">
+        <div>
+          <div class="lbl">Résultat global du mois</div>
+          <div class="val num"><span class="cu" data-to="65320">0</span><span class="c">DH</span></div>
+          <div class="delta"><i data-lucide="trending-up"></i>18% vs Avril</div>
+        </div>
+        <svg viewBox="0 0 108 66" preserveAspectRatio="none">
+          <path class="spark" d="M2,52 L16,44 L30,48 L44,30 L58,36 L72,20 L86,26 L106,10" fill="none" stroke="#D6001C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
 
-      <div class="mini-row">
-        <div class="card mini reveal" style="transition-delay:.05s">
-          <div class="dot" style="background:var(--green-soft)"><i data-lucide="store" style="color:var(--green)"></i></div>
-          <div class="t">Gain R2 OTO</div>
-          <div class="v pos"><span class="num cu" data-to="28450">0</span></div>
-        </div>
-        <div class="card mini reveal" style="transition-delay:.1s">
-          <div class="dot" style="background:#F0F0F2"><i data-lucide="landmark"></i></div>
-          <div class="t">Marchés</div>
-          <div class="v"><span class="num cu" data-to="18250">0</span></div>
-        </div>
-        <div class="card mini reveal" style="transition-delay:.15s">
-          <div class="dot" style="background:#F0F0F2"><i data-lucide="user-round"></i></div>
-          <div class="t">Personnel</div>
-          <div class="v"><span class="num cu" data-to="-6240">0</span></div>
+      <div class="trio reveal mb14" style="transition-delay:.05s">
+        <div class="stat"><div class="k">Trésorerie disponible</div><div class="v blue num"><span class="cu" data-to="37850">0</span><span class="u">DH</span></div><i data-lucide="wallet"></i></div>
+        <div class="stat"><div class="k">À encaisser</div><div class="v num"><span class="cu" data-to="52600">0</span><span class="u">DH</span></div><i data-lucide="arrow-down-left"></i></div>
+        <div class="stat"><div class="k">À payer</div><div class="v red num"><span class="cu" data-to="126750">0</span><span class="u">DH</span></div><i data-lucide="arrow-up-right"></i></div>
+      </div>
+
+      <div class="alert reveal mb18" style="transition-delay:.1s" onclick="showScreen('creances')">
+        <i data-lucide="alert-triangle" class="w"></i>
+        <div class="txt">4 chèques à échéance dans les 7 prochains jours</div>
+        <i data-lucide="chevron-right" class="c"></i>
+      </div>
+
+      <div class="sect"><div class="t">Répartition des activités</div></div>
+      <div class="card donutwrap reveal mb18">
+        <svg class="donut" viewBox="0 0 140 140" data-segs='[{"v":28450,"color":"#D6001C"},{"v":31870,"color":"#14151C"},{"v":4000,"color":"#B6BAC4"}]'></svg>
+        <div class="legend">
+          <div class="row"><span class="dot" style="background:#D6001C"></span><span class="nm">R2 OTO</span><span class="am num">28 450 DH</span></div>
+          <div class="row"><span class="dot" style="background:#14151C"></span><span class="nm">Marchés publics</span><span class="am num">31 870 DH</span></div>
+          <div class="row"><span class="dot" style="background:#B6BAC4"></span><span class="nm">Dépenses perso.</span><span class="am num" style="color:var(--sub)">-4 000 DH</span></div>
         </div>
       </div>
 
-      <div class="card pay reveal" style="transition-delay:.2s">
-        <div class="ico"><i data-lucide="alert-circle"></i></div>
-        <div>
-          <div class="lbl">Paiements à venir</div>
-          <div class="meta">4 chèques ce mois</div>
-        </div>
-        <div class="amt">
-          <div class="n num"><span class="cu" data-to="126700">0</span></div>
-          <div class="c">DH</div>
-        </div>
-      </div>
-
-      <button class="cta" onclick="go('pay')">Voir les détails<i data-lucide="arrow-right"></i></button>
-    </section>
-
-    <!-- ================= ACTIVITÉS ================= -->
-    <section class="page" id="p-act">
-      <div class="head">
-        <div>
-          <div class="hi" style="font-size:28px;font-weight:700;letter-spacing:-.03em">Activités</div>
-          <div class="date" style="margin-top:6px">Août 2026</div>
-        </div>
-      </div>
-
-      <div class="seg" id="seg">
-        <div class="ind"></div>
-        <button class="on" data-i="0">R2 OTO</button>
-        <button data-i="1">Marchés</button>
-        <button data-i="2">Personnel</button>
-      </div>
-
-      <div class="swipe" id="swipe">
-        <!-- panel template filled by JS -->
+      <div class="sect"><div class="t">Aperçu rapide</div></div>
+      <div class="list quick reveal">
+        <div class="li" onclick="showScreen('creances')"><div class="ic"><i data-lucide="file-text"></i></div><div><div class="nm">Créances fournisseurs</div></div><div class="am red num">126 750 DH</div></div>
+        <div class="li" onclick="showScreen('marches')"><div class="ic"><i data-lucide="building-2"></i></div><div><div class="nm">Marchés en cours</div></div><div class="am num">2</div></div>
+        <div class="li" onclick="showScreen('personnel')"><div class="ic"><i data-lucide="user-round"></i></div><div><div class="nm">Dépenses personnelles</div></div><div class="am num">6 250 DH</div></div>
       </div>
     </section>
 
-    <!-- ================= PAIEMENTS ================= -->
-    <section class="page" id="p-pay">
-      <div class="ph">
-        <h1>Paiements</h1>
-        <p>Chèques et échéances fournisseurs</p>
+    <!-- ============ R2 OTO ============ -->
+    <section class="screen" id="s-r2oto">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="title" style="color:var(--red);font-weight:800">R2 OTO</div>
+        <button class="iconbtn plain"><i data-lucide="sliders-horizontal"></i></button>
       </div>
-      <div id="paylist"></div>
+      <div class="tabs" id="r2tabs">
+        <button class="on" data-t="syn">Synthèse</button>
+        <button data-t="ventes">Ventes</button>
+        <button data-t="achats">Achats / Charges</button>
+      </div>
+
+      <div id="r2-syn">
+        <div style="display:flex;justify-content:center;margin-bottom:14px"><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
+        <div class="sect"><div class="t">Synthèse du mois</div></div>
+        <div class="card syn reveal mb18">
+          <div class="c"><div class="k">Chiffre d'affaires</div><div class="v green num">78 450<span class="u">DH</span></div></div>
+          <div class="c"><div class="k">Charges totales</div><div class="v red num">50 000<span class="u">DH</span></div></div>
+          <div class="c"><div class="k">Gain réel</div><div class="v green num">28 450<span class="u">DH</span></div></div>
+        </div>
+
+        <div class="card chartcard reveal mb18">
+          <div class="hd"><div class="t">Évolution du gain (6 mois)</div><div class="selector" style="padding:6px 10px;font-size:12px">6 mois <i data-lucide="chevron-down"></i></div></div>
+          <svg viewBox="0 0 320 210" id="gainchart"></svg>
+        </div>
+
+        <div class="sect"><div class="t">Dernières opérations</div><div class="a">Voir tout</div></div>
+        <div class="list reveal" id="r2-ops"></div>
+      </div>
+    </section>
+
+    <!-- ============ MARCHÉS ============ -->
+    <section class="screen" id="s-marches">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="title">Marchés publics</div>
+        <button class="iconbtn plain"><i data-lucide="sliders-horizontal"></i></button>
+      </div>
+
+      <div class="sect"><div class="t">Résumé global</div></div>
+      <div class="card summary reveal mb18">
+        <div class="c"><div class="big num">2</div><div class="k">Marchés en cours</div></div>
+        <div class="c"><div class="big num">231 450<span class="u">DH</span></div><div class="k">Montant total des marchés</div></div>
+        <div class="c"><div class="big green num">145 200<span class="u">DH</span></div><div class="k">Total dépenses</div></div>
+        <div class="c"><div class="big green num">86 250<span class="u">DH</span></div><div class="k">Marge estimée globale</div></div>
+      </div>
+
+      <div class="sect"><div class="t">Mes marchés</div><div class="a">Voir tout</div></div>
+
+      <div class="card market reveal">
+        <div class="top">
+          <div><div class="ao">AO 149/DCL/2026</div><div class="desc">Construction école primaire - Khenifra</div></div>
+          <span class="chip enc">En cours</span>
+        </div>
+        <div class="bar"><span style="width:65%;background:linear-gradient(90deg,#D6001C,#12A150)"></span></div>
+        <div class="pctlbl">65%</div>
+        <div class="kv"><span class="k">Montant du marché</span><span class="v num">850 000 DH</span></div>
+        <div class="kv"><span class="k">Total dépenses</span><span class="v red num">512 350 DH</span></div>
+        <div class="kv"><span class="k">Paiements reçus</span><span class="v green num">320 000 DH</span></div>
+        <div class="kv"><span class="k">Marge estimée</span><span class="v red num">25.2%</span></div>
+      </div>
+
+      <div class="card market reveal" style="transition-delay:.05s">
+        <div class="top">
+          <div><div class="ao">AO 082/INDH/2026</div><div class="desc">Aménagement route - Région Khenifra</div></div>
+          <span class="chip enc">En cours</span>
+        </div>
+        <div class="bar"><span style="width:40%;background:var(--orange)"></span></div>
+        <div class="pctlbl">40%</div>
+        <div class="kv"><span class="k">Montant du marché</span><span class="v num">650 000 DH</span></div>
+        <div class="kv"><span class="k">Total dépenses</span><span class="v red num">245 800 DH</span></div>
+        <div class="kv"><span class="k">Paiements reçus</span><span class="v green num">150 000 DH</span></div>
+        <div class="kv"><span class="k">Marge estimée</span><span class="v green num">20.0%</span></div>
+      </div>
+    </section>
+
+    <!-- ============ CRÉANCES ============ -->
+    <section class="screen" id="s-creances">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="title">Créances fournisseurs</div>
+        <button class="iconbtn"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="tabs" id="crtabs">
+        <button class="on" data-t="venir">À venir</button>
+        <button data-t="toutes">Toutes</button>
+        <button data-t="payees">Payées</button>
+      </div>
+
+      <div class="totcard">
+        <div class="l"><div class="k">TOTAL À PAYER</div><div class="v num">126 750 DH</div></div>
+        <div class="r"><div class="n num">4</div><div class="s">chèques à échéance ≤ 7 jours</div><i data-lucide="alert-triangle"></i></div>
+      </div>
+
+      <div id="cr-list"></div>
+    </section>
+
+    <!-- ============ PERSONNEL ============ -->
+    <section class="screen" id="s-personnel">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="title">Dépenses personnelles</div>
+        <button class="iconbtn"><i data-lucide="plus"></i></button>
+      </div>
+      <div style="display:flex;justify-content:center;margin:2px 0 16px"><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
+
+      <div class="card reveal mb18" style="padding:20px">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.04em">TOTAL DÉPENSES</div>
+        <div class="num" style="font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:4px">6 250 DH</div>
+        <div class="donutwrap" style="padding:16px 0 0">
+          <svg class="donut" viewBox="0 0 140 140" data-segs='[{"v":2100,"color":"#D6001C"},{"v":1550,"color":"#14151C"},{"v":1300,"color":"#9AA0AA"},{"v":700,"color":"#F17A8E"},{"v":600,"color":"#F6B8C4"}]'></svg>
+          <div class="legend">
+            <div class="row"><span class="dot" style="background:#D6001C"></span><span class="nm">Maison</span><span class="am num">2 100 DH</span><span class="pc num">33%</span></div>
+            <div class="row"><span class="dot" style="background:#14151C"></span><span class="nm">Voiture</span><span class="am num">1 550 DH</span><span class="pc num">25%</span></div>
+            <div class="row"><span class="dot" style="background:#9AA0AA"></span><span class="nm">Courses</span><span class="am num">1 300 DH</span><span class="pc num">21%</span></div>
+            <div class="row"><span class="dot" style="background:#F17A8E"></span><span class="nm">Santé</span><span class="am num">700 DH</span><span class="pc num">11%</span></div>
+            <div class="row"><span class="dot" style="background:#F6B8C4"></span><span class="nm">Loisirs</span><span class="am num">600 DH</span><span class="pc num">10%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sect"><div class="t">Dernières dépenses</div><div class="a">Voir tout</div></div>
+      <div class="list reveal">
+        <div class="li"><div class="ic"><i data-lucide="shopping-cart"></i></div><div><div class="nm">Courses chez Marjane</div><div class="dt">31 Mai 2026</div></div><div class="am neg num">350 DH</div></div>
+        <div class="li"><div class="ic"><i data-lucide="fuel"></i></div><div><div class="nm">Carburant</div><div class="dt">30 Mai 2026</div></div><div class="am neg num">250 DH</div></div>
+        <div class="li"><div class="ic"><i data-lucide="zap"></i></div><div><div class="nm">Électricité</div><div class="dt">28 Mai 2026</div></div><div class="am neg num">600 DH</div></div>
+      </div>
+    </section>
+
+    <!-- ============ PLACEHOLDERS ============ -->
+    <section class="screen" id="s-situation">
+      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Situation financière</div><span class="spacer" style="max-width:40px"></span></div>
+      <div class="ph-screen"><i data-lucide="pie-chart"></i><h2>Situation financière</h2><p>Vue consolidée de tes trois activités, bilan et trésorerie. Écran à connecter aux données.</p></div>
+    </section>
+    <section class="screen" id="s-calendrier">
+      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Calendrier des échéances</div><span class="spacer" style="max-width:40px"></span></div>
+      <div class="ph-screen"><i data-lucide="calendar-days"></i><h2>Calendrier des échéances</h2><p>Tous tes chèques et paiements à venir, mois par mois. Écran à connecter aux données.</p></div>
+    </section>
+    <section class="screen" id="s-documents">
+      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Documents</div><span class="spacer" style="max-width:40px"></span></div>
+      <div class="ph-screen"><i data-lucide="folder"></i><h2>Documents</h2><p>Factures, CPS, bordereaux et pièces des marchés. Écran à connecter aux données.</p></div>
+    </section>
+    <section class="screen" id="s-parametres">
+      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Paramètres</div><span class="spacer" style="max-width:40px"></span></div>
+      <div class="ph-screen"><i data-lucide="settings"></i><h2>Paramètres</h2><p>Profil, TVA, catégories, sauvegarde. Écran à connecter aux données.</p></div>
     </section>
 
   </div>
 
-  <div class="nav">
-    <button class="on" data-nav="dash" onclick="go('dash')"><i data-lucide="layout-grid"></i><span>Dashboard</span></button>
-    <button data-nav="act" onclick="go('act')"><i data-lucide="bar-chart-3"></i><span>Activités</span></button>
-    <button data-nav="pay" onclick="go('pay')"><i data-lucide="credit-card"></i><span>Paiements</span></button>
+  <!-- ============ BOTTOM NAV ============ -->
+  <div class="nav" id="nav">
+    <button class="on" data-s="dashboard" onclick="showScreen('dashboard')"><i data-lucide="home"></i><span>Dashboard</span></button>
+    <button data-s="r2oto" onclick="showScreen('r2oto')"><i data-lucide="shopping-cart"></i><span>R2 OTO</span></button>
+    <button data-s="marches" onclick="showScreen('marches')"><i data-lucide="building-2"></i><span>Marchés</span></button>
+    <button data-s="personnel" onclick="showScreen('personnel')"><i data-lucide="user"></i><span>Personnel</span></button>
+    <button onclick="openDrawer()"><i data-lucide="more-horizontal"></i><span>Plus</span></button>
   </div>
-  <div class="gesture"><div class="bar"></div></div>
+
+  <!-- ============ DRAWER ============ -->
+  <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dhead"><div class="dlogo"><div class="lt">R²'OTO</div><div class="tag">PILOTE TES FINANCES</div></div></div>
+    <div class="prof"><div class="av">SR</div><div><div class="nmm">So Refa</div><div class="role">Dirigeant</div></div></div>
+    <div class="items" id="ditems">
+      <div class="ditem on" data-s="dashboard"><i data-lucide="layout-dashboard"></i>Tableau de bord</div>
+      <div class="ditem" data-s="r2oto"><i data-lucide="shopping-cart"></i>R2 OTO</div>
+      <div class="ditem" data-s="creances"><i data-lucide="file-text"></i>Créances fournisseurs</div>
+      <div class="ditem" data-s="marches"><i data-lucide="building-2"></i>Marchés publics</div>
+      <div class="ditem" data-s="personnel"><i data-lucide="user"></i>Dépenses personnelles</div>
+      <div class="ditem" data-s="situation"><i data-lucide="pie-chart"></i>Situation financière</div>
+      <div class="ditem" data-s="calendrier"><i data-lucide="calendar-days"></i>Calendrier des échéances</div>
+      <div class="ditem" data-s="documents"><i data-lucide="folder"></i>Documents</div>
+      <div class="ditem" data-s="parametres"><i data-lucide="settings"></i>Paramètres</div>
+      <div class="ditem logout"><i data-lucide="log-out"></i>Déconnexion</div>
+    </div>
+  </aside>
 </div>
 
 <script>
-const fmt = n => Math.round(n).toLocaleString('fr-FR').replace(/\s/g,'\u202F');
+const fmt = n => Math.round(n).toLocaleString('fr-FR').replace(/\u00A0/g,' ');
+const MAIN = ['dashboard','r2oto','marches','personnel'];
 
-/* ---- data ---- */
-const ACT = [
-  { key:'R2 OTO', result:28450, rec:142300, dep:113850,
-    spark:"M0,58 L34,50 L68,54 L102,40 L136,46 L170,32 L204,38 L238,26 L272,30 L306,18 L340,24",
-    ops:[
-      {i:'shopping-bag', t:'Vente comptoir — plaquettes', d:"Aujourd'hui", a:'+3\u202F200', in:true},
-      {i:'truck', t:'Achat marchandise — Denso', d:'1 août', a:'−18\u202F400'},
-      {i:'shopping-bag', t:'Vente comptoir — filtres', d:'1 août', a:'+1\u202F750', in:true},
-      {i:'home', t:'Loyer du local', d:'31 juil', a:'−4\u202F500'},
-      {i:'users', t:'Salaire — Youssef', d:'30 juil', a:'−5\u202F200'},
-    ]},
-  { key:'Marchés', result:18250, rec:210000, dep:191750,
-    spark:"M0,60 L34,58 L68,44 L102,48 L136,34 L170,40 L204,28 L238,32 L272,22 L306,26 L340,16",
-    ops:[
-      {i:'banknote', t:'Situation n°1 encaissée', d:'28 juil', a:'+210\u202F000', in:true},
-      {i:'settings', t:'Pompe immergée — Douar Essikh', d:'27 juil', a:'−42\u202F000'},
-      {i:'zap', t:'Armoire de commande', d:'24 juil', a:'−18\u202F700'},
-      {i:'hard-hat', t:'Main d\'œuvre — station', d:'22 juil', a:'−22\u202F000'},
-      {i:'cable', t:'Câblage électrique', d:'20 juil', a:'−15\u202F300'},
-    ]},
-  { key:'Personnel', result:-6240, rec:0, dep:6240,
-    spark:"M0,30 L34,34 L68,28 L102,40 L136,36 L170,48 L204,44 L238,54 L272,50 L306,60 L340,58",
-    ops:[
-      {i:'home', t:'Loyer appartement', d:'1 août', a:'−3\u202F500'},
-      {i:'shopping-cart', t:'Alimentation', d:'31 juil', a:'−1\u202F240'},
-      {i:'graduation-cap', t:'École des enfants', d:'29 juil', a:'−880'},
-      {i:'fuel', t:'Carburant', d:'28 juil', a:'−620'},
-    ]},
+/* ---------- data ---------- */
+const R2OPS = [
+  {i:'receipt', t:'Vente - Facture FA2505-124', a:'1 850 DH', cls:'pos', k:'ventes'},
+  {i:'truck', t:'Achat - Fournisseur Auto Parts', a:'-2 450 DH', cls:'neg', k:'achats'},
+  {i:'home', t:'Charge - Loyer', a:'-3 000 DH', cls:'neg', k:'achats'},
+  {i:'receipt', t:'Vente - Facture FA2505-123', a:'2 150 DH', cls:'pos', k:'ventes'},
+];
+const CREANCES = [
+  {sup:'Auto Parts Maroc', ini:'AP', amt:'18 500 DH', chq:'215487', date:'01/06/2026', due:'1 jour', dc:'d1', st:'venir'},
+  {sup:'Sodipièces', ini:'SO', amt:'24 000 DH', chq:'215488', date:'03/06/2026', due:'3 jours', dc:'d3', st:'venir'},
+  {sup:'Batteries Expert', ini:'BE', amt:'12 750 DH', chq:'215489', date:'07/06/2026', due:'7 jours', dc:'d7', st:'venir'},
+  {sup:'Lubri Maroc', ini:'LM', amt:'15 000 DH', chq:'215490', date:'12/06/2026', due:'12 jours', dc:'d12', st:'venir'},
+  {sup:'Filtres Pro', ini:'FP', amt:'8 000 DH', chq:'215480', date:'20/05/2026', due:'Payé', dc:'d12', st:'payee'},
+  {sup:'Huiles Sud', ini:'HS', amt:'6 500 DH', chq:'215479', date:'18/05/2026', due:'Payé', dc:'d12', st:'payee'},
 ];
 
-const PAYS = [
-  {sup:'Denso Distribution', amt:'42\u202F300', chq:'4471203', due:'5 août 2026', st:'soon'},
-  {sup:'Bosch Auto Parts', amt:'31\u202F500', chq:'4471198', due:'9 août 2026', st:'soon'},
-  {sup:'Valeo Maroc', amt:'28\u202F900', chq:'4471210', due:'16 août 2026', st:'up'},
-  {sup:'Sofima Maroc', amt:'24\u202F000', chq:'4471215', due:'24 août 2026', st:'up'},
-  {sup:'NGK Maroc', amt:'9\u202F800', chq:'4471221', due:'12 sept 2026', st:'up'},
-  {sup:'Filtres Purflux', amt:'12\u202F400', chq:'4471180', due:'28 juil 2026', st:'done'},
-];
-const STLBL = {soon:'Échéance proche', up:'À venir', done:'Réglé'};
+/* ---------- build R2 ops ---------- */
+function renderR2(tab){
+  const box=document.getElementById('r2-ops');
+  const items = tab==='syn' ? R2OPS : R2OPS.filter(o=>o.k===tab);
+  box.innerHTML = items.map(o=>`
+    <div class="li"><div class="ic"><i data-lucide="${o.i}"></i></div>
+    <div><div class="nm">${o.t}</div></div>
+    <div class="am ${o.cls} num">${o.a}</div></div>`).join('') || `<div class="empty"><i data-lucide="inbox"></i><p>Aucune opération</p></div>`;
+  lucide.createIcons();
+}
+document.getElementById('r2-syn'); // syn container always visible; tabs filter ops
+document.querySelectorAll('#r2tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('#r2tabs button').forEach(x=>x.classList.toggle('on',x===b));
+    const t=b.dataset.t;
+    // hide synthèse/chart blocks when not on Synthèse
+    const syn=document.querySelectorAll('#r2-syn > *');
+    const showAll = t==='syn';
+    document.querySelector('#r2-syn .syn').closest('.card').style.display = showAll?'':'none';
+    document.querySelector('#gainchart').closest('.card').style.display = showAll?'':'none';
+    document.querySelectorAll('#r2-syn > div')[0].style.display = showAll?'':'none'; // month selector
+    renderR2(t==='syn'?'syn':t);
+    document.querySelector('#r2-syn .sect .t').textContent = showAll?'Dernières opérations':(t==='ventes'?'Ventes':'Achats & charges');
+  };
+});
 
-/* ---- build activités ---- */
-const swipe = document.getElementById('swipe');
-ACT.forEach((a,idx)=>{
-  const sign = a.result<0 ? '−' : '';
-  const val = fmt(Math.abs(a.result));
-  const stroke = a.result<0 ? '#8E8E93' : '#17A673';
-  const gid = 'ga'+idx;
-  const ops = a.ops.map(o=>`
-    <div class="op">
-      <div class="oi"><i data-lucide="${o.i}"></i></div>
-      <div><div class="ot">${o.t}</div><div class="od">${o.d}</div></div>
-      <div class="oa ${o.in?'in':''} num">${o.a}</div>
+/* ---------- build créances ---------- */
+function renderCreances(tab){
+  const box=document.getElementById('cr-list');
+  let items = tab==='toutes'?CREANCES : CREANCES.filter(c=>c.st===tab);
+  if(tab==='payees') items = CREANCES.filter(c=>c.st==='payee');
+  if(!items.length){box.innerHTML=`<div class="empty"><i data-lucide="check-circle-2"></i><p>Aucun chèque dans cet onglet</p></div>`;lucide.createIcons();return;}
+  box.innerHTML = items.map(c=>`
+    <div class="creance">
+      <div class="lg">${c.ini}</div>
+      <div class="mid"><div class="sup">${c.sup}</div><div class="chq">Chèque N° ${c.chq}</div></div>
+      <div class="rt"><div class="amt num">${c.amt}</div><div class="date num">${c.date}</div><div><span class="due ${c.dc}">${c.due}</span></div></div>
     </div>`).join('');
-  swipe.insertAdjacentHTML('beforeend', `
-    <div class="panel"><div class="wrap">
-      <div class="card result reveal">
-        <div class="lbl">Résultat du mois</div>
-        <div class="big num">${sign}<span>${val}</span><span class="cur">DH</span></div>
-        <svg class="spark2" viewBox="0 0 340 80" preserveAspectRatio="none">
-          <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="${stroke}" stop-opacity=".14"/>
-            <stop offset="1" stop-color="${stroke}" stop-opacity="0"/>
-          </linearGradient></defs>
-          <path class="area" d="${a.spark} L340,80 L0,80 Z" fill="url(#${gid})" opacity="0"/>
-          <path class="line" d="${a.spark}" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="stats reveal" style="transition-delay:.05s">
-        <div class="s"><div class="k">Recettes</div><div class="val g num">${fmt(a.rec)}</div></div>
-        <div class="s"><div class="k">Dépenses</div><div class="val num">${fmt(a.dep)}</div></div>
-        <div class="s"><div class="k">Résultat</div><div class="val ${a.result<0?'':'g'} num">${sign}${val}</div></div>
-      </div>
-      <div class="sect-t">Historique des opérations</div>
-      <div class="ops reveal" style="transition-delay:.1s">${ops}</div>
-    </div></div>`);
+  lucide.createIcons();
+}
+document.querySelectorAll('#crtabs button').forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll('#crtabs button').forEach(x=>x.classList.toggle('on',x===b));renderCreances(b.dataset.t);};
 });
 
-/* ---- build paiements ---- */
-const pl = document.getElementById('paylist');
-PAYS.forEach(p=>{
-  const cls = p.st==='soon'?'soon':(p.st==='done'?'done':'');
-  const badge = p.st==='soon'?'<span class="status s-soon">Échéance proche</span>'
-    : p.st==='done'?'<span class="status s-done"><i data-lucide="check"></i>Réglé</span>'
-    : '<span class="status s-up">À venir</span>';
-  pl.insertAdjacentHTML('beforeend', `
-    <div class="pcard ${cls}">
-      <div class="top"><div class="sup">${p.sup}</div><div class="amt num">${p.amt} DH</div></div>
-      <div class="mid"><i data-lucide="file-text"></i>Chèque N° ${p.chq}</div>
-      <div class="foot"><div class="due num">${p.due}</div>${badge}</div>
-    </div>`);
-});
-
-/* ---- navigation ---- */
-function go(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('p-'+(name==='dash'?'dash':name==='act'?'act':'pay')).classList.add('active');
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on', b.dataset.nav===name));
-  document.getElementById('screen').scrollTop = 0;
-  requestAnimationFrame(()=>{ runReveal(); if(name==='dash'||name==='act') runCounts(); });
-  if(name==='act') setTimeout(()=>moveSeg(active),50);
-}
-
-/* ---- segmented + swipe ---- */
-const seg = document.getElementById('seg');
-const ind = seg.querySelector('.ind');
-let active = 0;
-function moveSeg(i){
-  ind.style.transform = `translateX(${i*100}%)`;
-  seg.querySelectorAll('button').forEach((b,k)=>b.classList.toggle('on',k===i));
-}
-seg.querySelectorAll('button').forEach(b=>{
-  b.onclick=()=>{ const i=+b.dataset.i; swipe.scrollTo({left:i*swipe.clientWidth,behavior:'smooth'}); };
-});
-let st;
-swipe.addEventListener('scroll',()=>{
-  clearTimeout(st);
-  const i = Math.round(swipe.scrollLeft/swipe.clientWidth);
-  if(i!==active){ active=i; moveSeg(i); }
-  st=setTimeout(runReveal,60);
-});
-
-/* ---- reveal on scroll ---- */
-let io;
-function runReveal(){
-  document.querySelectorAll('.page.active .reveal').forEach(el=>{
-    const r = el.getBoundingClientRect();
-    if(r.top < window.innerHeight - 40) el.classList.add('in');
-  });
-}
-document.getElementById('screen').addEventListener('scroll',runReveal);
-
-/* ---- count up ---- */
-function countTo(el){
-  const to = +el.dataset.to, dur=1000, t0=performance.now();
-  const neg = to<0; const abs=Math.abs(to);
-  function step(t){
-    const p=Math.min((t-t0)/dur,1);
-    const e=1-Math.pow(1-p,4);
-    el.textContent=(neg?'−':'')+fmt(abs*e);
-    if(p<1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-function runCounts(){
-  document.querySelectorAll('.page.active .cu').forEach(el=>{
-    if(el.dataset.done) return; el.dataset.done=1; countTo(el);
+/* ---------- donuts ---------- */
+function drawDonut(el){
+  if(el.dataset.done) return; el.dataset.done=1;
+  const segs=JSON.parse(el.dataset.segs);
+  const total=segs.reduce((s,x)=>s+x.v,0);
+  const r=54,C=2*Math.PI*r,ns='http://www.w3.org/2000/svg';let off=0;
+  segs.forEach((s,idx)=>{
+    const len=C*(s.v/total);
+    const c=document.createElementNS(ns,'circle');
+    c.setAttribute('cx',70);c.setAttribute('cy',70);c.setAttribute('r',r);
+    c.setAttribute('fill','none');c.setAttribute('stroke',s.color);c.setAttribute('stroke-width',20);
+    c.setAttribute('stroke-linecap','butt');
+    c.setAttribute('stroke-dasharray',`0 ${C}`);
+    c.setAttribute('stroke-dashoffset',-off);
+    c.setAttribute('transform','rotate(-90 70 70)');
+    c.style.transition='stroke-dasharray .8s var(--ease)';c.style.transitionDelay=(idx*.12)+'s';
+    el.appendChild(c);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>c.setAttribute('stroke-dasharray',`${len} ${C-len}`)));
+    off+=len;
   });
 }
 
-/* ---- init ---- */
+/* ---------- gain line chart ---------- */
+function drawGain(){
+  const svg=document.getElementById('gainchart');
+  if(svg.dataset.done) return; svg.dataset.done=1;
+  const vals=[14,21,17,24,22,28.45], max=40, months=['Déc','Jan','Fév','Mar','Avr','Mai'];
+  const x0=38,x1=310,y0=15,y1=170;
+  const X=i=>x0+(x1-x0)*i/5, Y=v=>y1-(v/max)*(y1-y0);
+  let g='';
+  [40,30,20,10,0].forEach(v=>{const y=Y(v);g+=`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="rgba(20,21,28,.06)" stroke-width="1"/><text x="${x0-8}" y="${y+3.5}" text-anchor="end" font-size="9" fill="#8A8E99">${v}K</text>`;});
+  months.forEach((m,i)=>{g+=`<text x="${X(i)}" y="196" text-anchor="middle" font-size="9.5" fill="#8A8E99">${m}</text>`;});
+  const pts=vals.map((v,i)=>[X(i),Y(v)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+  const area=line+` L${X(5)},${y1} L${x0},${y1} Z`;
+  g+=`<defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D6001C" stop-opacity=".14"/><stop offset="1" stop-color="#D6001C" stop-opacity="0"/></linearGradient></defs>`;
+  g+=`<path d="${area}" fill="url(#gg)"/>`;
+  g+=`<path id="gline" d="${line}" fill="none" stroke="#D6001C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  pts.forEach(p=>g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="#fff" stroke="#D6001C" stroke-width="2.2"/>`);
+  svg.innerHTML=g;
+  const ln=document.getElementById('gline'),L=ln.getTotalLength();
+  ln.style.strokeDasharray=L;ln.style.strokeDashoffset=L;ln.style.transition='stroke-dashoffset 1.3s var(--ease)';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>ln.style.strokeDashoffset=0));
+}
+
+/* ---------- counters ---------- */
+function countUp(el){
+  const to=+el.dataset.to;el.dataset.run=1;const t0=performance.now(),d=900;
+  (function s(t){const p=Math.min((t-t0)/d,1),e=1-Math.pow(1-p,4);el.textContent=fmt(to*e);if(p<1)requestAnimationFrame(s);})(performance.now());
+}
+/* ---------- reveal ---------- */
+function reveal(){document.querySelectorAll('.screen.active .reveal').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight-30)el.classList.add('in');});}
+document.getElementById('body').addEventListener('scroll',reveal);
+
+/* ---------- navigation ---------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active','s-'+id===s.id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
+  document.querySelectorAll('#ditems .ditem').forEach(d=>d.classList.toggle('on',d.dataset.s===id));
+  document.getElementById('body').scrollTop=0;
+  closeDrawer();
+  requestAnimationFrame(()=>{
+    lucide.createIcons(); reveal();
+    document.querySelectorAll('.screen.active .cu:not([data-run])').forEach(countUp);
+    document.querySelectorAll('.screen.active .donut').forEach(drawDonut);
+    if(id==='r2oto') drawGain();
+  });
+}
+function openDrawer(){document.getElementById('scrim').classList.add('open');document.getElementById('drawer').classList.add('open');}
+function closeDrawer(){document.getElementById('scrim').classList.remove('open');document.getElementById('drawer').classList.remove('open');}
+document.querySelectorAll('#ditems .ditem[data-s]').forEach(d=>d.onclick=()=>showScreen(d.dataset.s));
+
+/* ---------- init ---------- */
 window.addEventListener('load',()=>{
   lucide.createIcons();
-  // draw sparklines
-  document.querySelectorAll('.line').forEach(p=>{
-    const len=p.getTotalLength();
-    p.style.strokeDasharray=len; p.style.strokeDashoffset=len;
-    p.style.transition='stroke-dashoffset 1.4s var(--ease)';
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ p.style.strokeDashoffset=0; }); });
-  });
-  document.querySelectorAll('.area').forEach(a=>{
-    a.style.transition='opacity 1s ease .5s'; requestAnimationFrame(()=>a.style.opacity=1);
-  });
-  runReveal(); runCounts(); moveSeg(0);
+  renderR2('syn'); renderCreances('venir');
+  reveal();
+  document.querySelectorAll('.screen.active .cu').forEach(countUp);
+  document.querySelectorAll('.screen.active .donut').forEach(drawDonut);
+  // animate hero spark
+  const sp=document.querySelector('.spark');if(sp){const L=sp.getTotalLength();sp.style.strokeDasharray=L;sp.style.strokeDashoffset=L;sp.style.transition='stroke-dashoffset 1.2s var(--ease)';requestAnimationFrame(()=>requestAnimationFrame(()=>sp.style.strokeDashoffset=0));}
 });
 </script>
 </body>
