@@ -3,610 +3,334 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>R2 OTO — Pilote tes finances</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>WCR — Working Capital Requirement</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --bg:#F4F5F7; --card:#FFFFFF;
-  --ink:#14151C; --sub:#8A8E99; --faint:#B6BAC4;
-  --line:rgba(20,21,28,.07); --line2:rgba(20,21,28,.04);
-  --red:#D6001C; --red-soft:#FCE9EB; --red-soft2:rgba(214,0,28,.06);
-  --green:#12A150; --green-soft:#E6F5EC;
-  --blue:#2563EB; --orange:#F59E0B; --orange-soft:#FEF2E0;
-  --gray:#9AA0AA;
-  --r:20px; --r-sm:16px;
-  --sh:0 1px 2px rgba(20,21,28,.04), 0 10px 24px -14px rgba(20,21,28,.12);
-  --sh-sm:0 1px 3px rgba(20,21,28,.06);
-  --ease:cubic-bezier(.32,.72,0,1);
+  --bg:#F4F5F7;--card:#FFF;--ink:#14151C;--sub:#8A8E99;--faint:#B6BAC4;
+  --line:rgba(20,21,28,.09);--red:#D6001C;--red-soft:#FCE9EB;--green:#12A150;--green-soft:#E6F5EC;--orange:#F59E0B;--orange-soft:#FEF2E0;
+  --r:20px;--sh:0 1px 2px rgba(20,21,28,.04),0 12px 28px -16px rgba(20,21,28,.16);--ease:cubic-bezier(.32,.72,0,1);
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{
-  font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;
-  background:var(--bg); color:var(--ink);
-  display:flex; justify-content:center; min-height:100dvh;
-  -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
-}
-.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
-
-.app{
-  width:100%; max-width:440px; min-height:100dvh; background:var(--bg);
-  display:flex; flex-direction:column; position:relative; overflow:hidden;
-  box-shadow:0 0 60px rgba(0,0,0,.05);
-}
-.body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
-.body::-webkit-scrollbar{display:none}
-.screen{display:none;padding:0 16px 110px;animation:fade .35s var(--ease)}
-.screen.active{display:block}
+body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100dvh;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
+.wrap{max-width:440px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column}
+.num{font-variant-numeric:tabular-nums}
+.screen{display:none;flex:1;flex-direction:column;animation:fade .35s var(--ease)}
+.screen.on{display:flex}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-
-/* ---------- headers ---------- */
-.topbar{display:flex;align-items:center;gap:12px;padding:16px 4px 14px;position:sticky;top:0;background:var(--bg);z-index:8}
-.iconbtn{width:40px;height:40px;border-radius:12px;background:var(--card);box-shadow:var(--sh-sm);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);flex:0 0 40px}
-.iconbtn i{width:20px;height:20px;stroke-width:1.9}
-.iconbtn.plain{background:none;box-shadow:none}
-.bell{position:relative}
-.bell .badge{position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--red);color:#fff;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
-.logo{display:flex;flex-direction:column;align-items:center;line-height:1}
-.logo .lt{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.center{justify-content:center;padding:28px 22px}
+.logo{text-align:center;margin-bottom:28px}
+.logo .lt{font-size:30px;font-weight:800;letter-spacing:-.03em}
 .logo .lt .r{color:var(--red)}
-.logo .lt .o{color:var(--ink)}
-.logo .tag{font-size:8.5px;font-weight:600;letter-spacing:.16em;color:var(--sub);margin-top:3px}
-.topbar .title{font-size:17px;font-weight:700;letter-spacing:-.02em;flex:1;text-align:center}
+.logo .tag{font-size:9px;font-weight:600;letter-spacing:.14em;color:var(--sub);margin-top:5px}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:24px 22px}
+h2{font-size:20px;font-weight:800;letter-spacing:-.02em}
+.muted{font-size:14px;color:var(--sub);line-height:1.5;font-weight:450}
+.segtop{display:flex;background:#EFEFF1;border-radius:12px;padding:3px;margin:0 0 20px}
+.segtop button{flex:1;border:none;background:none;font-family:inherit;font-size:14px;font-weight:700;color:var(--sub);padding:10px 0;border-radius:9px;cursor:pointer;transition:.2s}
+.segtop button.on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:7px}
+.field input{width:100%;border:1.5px solid var(--line);background:#FAFAFB;border-radius:13px;padding:14px 15px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none;transition:.2s}
+.field input:focus{border-color:var(--red);background:#fff}
+.btn{width:100%;border:none;font-family:inherit;font-size:15.5px;font-weight:700;padding:16px;border-radius:14px;cursor:pointer;transition:transform .15s var(--ease),opacity .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn:active{transform:scale(.98)}.btn[disabled]{opacity:.55;pointer-events:none}
+.btn.primary{background:var(--red);color:#fff}
+.btn.ghost{background:#F0F0F2;color:var(--ink)}
+.btn.sm{width:auto;padding:9px 14px;font-size:13px;border-radius:11px}
+.btn.ok{background:var(--green);color:#fff}
+.link{text-align:center;margin-top:16px;font-size:13.5px;color:var(--sub)}
+.link a{color:var(--red);font-weight:700;text-decoration:none;cursor:pointer}
+.err{background:var(--red-soft);color:#B00018;font-size:13px;font-weight:600;padding:11px 14px;border-radius:11px;margin-bottom:14px;display:none;line-height:1.4}
+.err.on{display:block}
+.notice{background:var(--orange-soft);color:#9a5b00;font-size:12.5px;font-weight:600;padding:12px 14px;border-radius:12px;margin:0 22px 16px;line-height:1.45}
+.iconbig{width:64px;height:64px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px}
+.iconbig i{width:30px;height:30px;stroke-width:1.8}
+.iconbig.wait{background:var(--orange-soft)}.iconbig.wait i{color:var(--orange)}
+/* topbar app */
+.topbar{display:flex;align-items:center;gap:12px;padding:18px 20px 14px}
+.topbar .lt{font-size:20px;font-weight:800;letter-spacing:-.02em}.topbar .lt .r{color:var(--red)}
 .topbar .spacer{flex:1}
-.topbar.center{justify-content:space-between}
-
-.pagehead{display:flex;align-items:flex-end;justify-content:space-between;padding:4px 4px 18px}
-.pagehead h1{font-size:24px;font-weight:800;letter-spacing:-.03em}
-.selector{display:inline-flex;align-items:center;gap:6px;background:var(--card);box-shadow:var(--sh-sm);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer}
-.selector i{width:14px;height:14px;stroke-width:2.2;color:var(--sub)}
-
-/* ---------- cards ---------- */
-.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh)}
-.reveal{opacity:0;transform:translateY(12px);transition:opacity .55s var(--ease),transform .55s var(--ease)}
-.reveal.in{opacity:1;transform:none}
-.mb14{margin-bottom:14px}.mb12{margin-bottom:12px}.mb18{margin-bottom:18px}
-
-.sect{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 12px}
-.sect .t{font-size:15px;font-weight:700;letter-spacing:-.02em}
-.sect .a{font-size:13px;font-weight:600;color:var(--red);cursor:pointer}
-
-/* hero black card */
-.hero{background:#141519;border-radius:var(--r);padding:20px 20px 18px;color:#fff;position:relative;overflow:hidden;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.hero .lbl{font-size:13px;color:rgba(255,255,255,.6);font-weight:500}
-.hero .val{font-size:31px;font-weight:800;letter-spacing:-.03em;margin-top:8px;line-height:1}
-.hero .val .c{font-size:15px;font-weight:600;color:rgba(255,255,255,.45);margin-left:4px}
-.hero .delta{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:12.5px;font-weight:700;color:#4ADE80}
-.hero .delta i{width:13px;height:13px;stroke-width:2.6}
-.hero svg{flex:0 0 108px;height:66px;align-self:center}
-
-/* trio cards */
-.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-.stat{background:var(--card);border-radius:var(--r-sm);box-shadow:var(--sh);padding:13px 12px 14px}
-.stat .k{font-size:11px;color:var(--sub);font-weight:500;line-height:1.25;min-height:26px}
-.stat .v{font-size:16px;font-weight:800;letter-spacing:-.03em;margin-top:4px}
-.stat .u{font-size:10px;font-weight:700;color:var(--faint);margin-left:2px}
-.stat .v.blue{color:var(--blue)} .stat .v.red{color:var(--red)} .stat .v.green{color:var(--green)}
-.stat i{width:16px;height:16px;stroke-width:1.9;color:var(--faint);margin-top:11px;display:block}
-
-/* alert strip */
-.alert{display:flex;align-items:center;gap:11px;background:var(--red-soft);border-radius:14px;padding:13px 15px;cursor:pointer}
-.alert i.w{width:19px;height:19px;color:var(--red);stroke-width:2;flex:0 0 19px}
-.alert .txt{font-size:13px;font-weight:600;color:#B00018;flex:1;line-height:1.3}
-.alert i.c{width:16px;height:16px;color:var(--red);stroke-width:2.2;opacity:.6}
-
-/* donut block */
-.donutwrap{display:flex;align-items:center;gap:18px;padding:18px 20px}
-.donut{flex:0 0 116px;width:116px;height:116px}
-.legend{flex:1;display:flex;flex-direction:column;gap:11px}
-.legend .row{display:flex;align-items:center;gap:9px;font-size:13px}
-.legend .dot{width:10px;height:10px;border-radius:3px;flex:0 0 10px}
-.legend .nm{color:var(--ink);font-weight:500}
-.legend .am{margin-left:auto;font-weight:700;letter-spacing:-.02em}
-.legend .pc{color:var(--sub);font-weight:600;font-size:12px;width:34px;text-align:right}
-
-/* list rows */
-.list{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
-.li{display:flex;align-items:center;gap:13px;padding:14px 16px;position:relative}
-.li+.li::before{content:"";position:absolute;left:55px;right:0;top:0;height:1px;background:var(--line2)}
-.li .ic{width:34px;height:34px;border-radius:10px;background:#F2F3F5;display:flex;align-items:center;justify-content:center;flex:0 0 34px}
-.li .ic i{width:17px;height:17px;color:#5B6070;stroke-width:1.9}
-.li .nm{font-size:14px;font-weight:600;letter-spacing:-.01em}
-.li .dt{font-size:12px;color:var(--sub);margin-top:2px;font-weight:450}
-.li .am{margin-left:auto;font-size:14.5px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
-.li .am.pos{color:var(--green)} .li .am.neg{color:var(--red)}
-
-/* quick apercu */
-.quick .li .am{color:var(--ink)}
-.quick .li .am.red{color:var(--red)}
-
-/* ---------- segmented tabs ---------- */
-.tabs{display:flex;gap:22px;padding:2px 6px 0;border-bottom:1px solid var(--line);margin-bottom:16px}
-.tabs button{border:none;background:none;font-family:inherit;font-size:14px;font-weight:600;color:var(--sub);padding:10px 0 12px;position:relative;cursor:pointer}
-.tabs button.on{color:var(--red)}
-.tabs button.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2.5px;background:var(--red);border-radius:3px}
-
-/* synthese 3col */
-.syn{display:grid;grid-template-columns:1fr 1fr 1fr;padding:18px 8px}
-.syn .c{text-align:center;position:relative}
-.syn .c+.c::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:1px;background:var(--line)}
-.syn .k{font-size:11.5px;color:var(--sub);font-weight:500;line-height:1.3;min-height:28px;display:flex;align-items:center;justify-content:center}
-.syn .v{font-size:16px;font-weight:800;letter-spacing:-.03em;margin-top:6px}
-.syn .v.green{color:var(--green)} .syn .v.red{color:var(--red)}
-.syn .u{font-size:10px;font-weight:700;color:var(--faint);margin-left:2px}
-
-/* chart card */
-.chartcard{padding:16px 14px 10px}
-.chartcard .hd{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px}
-.chartcard .hd .t{font-size:14px;font-weight:700}
-.chartcard svg{width:100%;height:auto;display:block}
-
-/* marchés */
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:16px 12px;padding:18px 20px}
-.summary .c .big{font-size:20px;font-weight:800;letter-spacing:-.03em}
-.summary .c .big.green{color:var(--green)}
-.summary .c .u{font-size:11px;font-weight:700;color:var(--faint);margin-left:2px}
-.summary .c .k{font-size:11.5px;color:var(--sub);font-weight:500;margin-top:3px;line-height:1.25}
-.market{padding:18px 18px 16px;margin-bottom:12px}
-.market .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
-.market .ao{font-size:15px;font-weight:800;letter-spacing:-.02em}
-.market .desc{font-size:12.5px;color:var(--sub);margin-top:4px;font-weight:450}
-.chip{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:8px;white-space:nowrap}
-.chip.enc{background:var(--green-soft);color:var(--green)}
-.bar{height:7px;border-radius:5px;background:#EEF0F3;margin:14px 0 4px;overflow:hidden}
-.bar>span{display:block;height:100%;border-radius:5px}
-.bar .pct{}
-.market .pctlbl{text-align:right;font-size:11.5px;font-weight:700;color:var(--sub);margin-bottom:12px}
-.kv{display:flex;align-items:center;justify-content:space-between;padding:8px 0;font-size:13px;border-top:1px solid var(--line2)}
-.kv:first-of-type{border-top:none}
-.kv .k{color:var(--sub);font-weight:500}
-.kv .v{font-weight:700;letter-spacing:-.02em}
-.kv .v.red{color:var(--red)} .kv .v.green{color:var(--green)}
-
-/* créances */
-.totcard{display:flex;align-items:center;gap:14px;background:var(--red-soft);border-radius:var(--r);padding:18px 20px;margin-bottom:16px}
-.totcard .l{flex:1}
-.totcard .k{font-size:11px;font-weight:700;color:#B00018;letter-spacing:.04em}
-.totcard .v{font-size:24px;font-weight:800;letter-spacing:-.03em;color:#B00018;margin-top:4px}
-.totcard .r{text-align:right;display:flex;align-items:center;gap:8px}
-.totcard .r .n{font-size:22px;font-weight:800;color:var(--red)}
-.totcard .r .s{font-size:11px;color:#B00018;font-weight:600;max-width:90px;line-height:1.25;text-align:left}
-.totcard .r i{width:18px;height:18px;color:var(--red)}
-.creance{display:flex;align-items:center;gap:13px;background:var(--card);border-radius:var(--r-sm);box-shadow:var(--sh);padding:15px 16px;margin-bottom:10px}
-.creance .lg{width:38px;height:38px;border-radius:10px;background:#F2F3F5;display:flex;align-items:center;justify-content:center;flex:0 0 38px;font-size:10px;font-weight:800;color:#5B6070;text-align:center;line-height:1.05;padding:3px}
-.creance .mid{flex:1;min-width:0}
-.creance .sup{font-size:14.5px;font-weight:700;letter-spacing:-.01em}
-.creance .chq{font-size:12px;color:var(--sub);margin-top:3px;font-weight:450}
-.creance .rt{text-align:right;flex:0 0 auto}
-.creance .amt{font-size:15px;font-weight:800;letter-spacing:-.02em}
-.creance .date{font-size:11.5px;color:var(--sub);margin-top:2px}
-.due{display:inline-block;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;margin-top:6px}
-.due.d1{background:var(--red-soft);color:var(--red)}
-.due.d3{background:var(--orange-soft);color:#C2410C}
-.due.d7{background:var(--orange-soft);color:#B45309}
-.due.d12{background:#EEF0F3;color:#5B6070}
-.empty{text-align:center;padding:50px 20px;color:var(--sub)}
-.empty i{width:34px;height:34px;stroke-width:1.6;color:var(--faint)}
-.empty p{font-size:14px;margin-top:12px;font-weight:500}
-
-/* placeholder */
-.ph-screen{text-align:center;padding:80px 30px}
-.ph-screen i{width:46px;height:46px;color:var(--faint);stroke-width:1.5}
-.ph-screen h2{font-size:19px;font-weight:800;margin-top:18px;letter-spacing:-.02em}
-.ph-screen p{font-size:14px;color:var(--sub);margin-top:8px;line-height:1.5}
-
-/* ---------- bottom nav ---------- */
-.nav{flex:0 0 auto;display:flex;padding:9px 8px calc(9px + env(safe-area-inset-bottom));background:rgba(244,245,247,.9);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-top:1px solid var(--line)}
-.nav button{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--faint);transition:color .2s var(--ease);padding:4px 0}
-.nav button i{width:23px;height:23px;stroke-width:1.9;transition:transform .2s var(--ease)}
-.nav button span{font-size:10px;font-weight:600;letter-spacing:-.01em}
-.nav button.on{color:var(--red)}
-.nav button:active i{transform:scale(.88)}
-
-/* ---------- drawer ---------- */
-.scrim{position:absolute;inset:0;background:rgba(10,10,12,.5);opacity:0;visibility:hidden;transition:opacity .3s var(--ease),visibility .3s;z-index:20}
-.scrim.open{opacity:1;visibility:visible}
-.drawer{position:absolute;top:0;left:0;bottom:0;width:84%;max-width:340px;background:#141519;color:#fff;transform:translateX(-100%);transition:transform .34s var(--ease);z-index:21;display:flex;flex-direction:column;padding:0 0 20px}
-.drawer.open{transform:none}
-.drawer .dhead{padding:26px 24px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
-.drawer .dlogo .lt{font-size:22px;font-weight:800;letter-spacing:-.02em;color:var(--red)}
-.drawer .dlogo .tag{font-size:8.5px;font-weight:600;letter-spacing:.16em;color:rgba(255,255,255,.4);margin-top:4px}
-.drawer .prof{display:flex;align-items:center;gap:13px;padding:20px 24px}
-.drawer .av{width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,#D6001C,#8a0012);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex:0 0 46px}
-.drawer .nmm{font-size:16px;font-weight:700}
-.drawer .role{font-size:12.5px;color:rgba(255,255,255,.5);margin-top:2px}
-.drawer .items{flex:1;overflow-y:auto;padding:8px 14px}
-.drawer .items::-webkit-scrollbar{display:none}
-.ditem{display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:12px;cursor:pointer;color:rgba(255,255,255,.82);font-size:14.5px;font-weight:500;transition:background .18s}
-.ditem i{width:20px;height:20px;stroke-width:1.8}
-.ditem:active{background:rgba(255,255,255,.06)}
-.ditem.on{background:rgba(214,0,28,.16);color:var(--red)}
-.ditem.logout{color:rgba(255,255,255,.55);margin-top:6px}
+.iconbtn{width:40px;height:40px;border-radius:12px;background:var(--card);box-shadow:var(--sh);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+.iconbtn i{width:19px;height:19px;stroke-width:1.9}
+.content{padding:6px 20px 40px}
+.hi{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.hidate{font-size:14px;color:var(--sub);margin-top:4px;font-weight:450}
+.block{margin-top:18px}
+.block .h{font-size:13px;font-weight:700;color:var(--sub);letter-spacing:.02em;text-transform:uppercase;margin:0 2px 10px}
+.kv{display:flex;justify-content:space-between;padding:13px 0;border-top:1px solid var(--line)}
+.kv:first-child{border-top:none}
+.kv .k{color:var(--sub);font-weight:500;font-size:14px}.kv .v{font-weight:700;font-size:14px}
+/* besoins editable */
+.brow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.brow input{flex:1;border:1.5px solid var(--line);background:#FAFAFB;border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14.5px;font-weight:600;outline:none}
+.brow input:focus{border-color:var(--red);background:#fff}
+.brow .del{width:42px;height:42px;flex:0 0 42px;border:1.5px solid var(--line);background:#fff;border-radius:12px;color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.brow .del i{width:17px;height:17px}
+.addb{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:1.5px dashed var(--line);background:none;border-radius:12px;padding:12px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer;margin-top:2px}
+.addb i{width:16px;height:16px}
+.chiplist{display:flex;flex-wrap:wrap;gap:8px}
+.chip2{background:#F2F3F5;border-radius:10px;padding:8px 13px;font-size:13px;font-weight:600}
+/* admin rows */
+.arow{display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.arow:first-child{border-top:none}
+.arow .av{width:40px;height:40px;border-radius:50%;background:#F2F3F5;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#5B6070;flex:0 0 40px}
+.arow .nm{font-size:14.5px;font-weight:700}
+.arow .em{font-size:12px;color:var(--sub);margin-top:2px}
+.arow .act{margin-left:auto;display:flex;gap:8px}
+.badge{font-size:10.5px;font-weight:700;padding:4px 9px;border-radius:8px}
+.badge.pend{background:var(--orange-soft);color:#9a5b00}
+.badge.appr{background:var(--green-soft);color:var(--green)}
+.badge.block{background:#EEF0F3;color:#5B6070}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:sp 1s linear infinite;margin:40px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
+.scrim{position:fixed;inset:0;background:rgba(10,10,12,.5);opacity:0;visibility:hidden;transition:.28s;z-index:20}
+.scrim.on{opacity:1;visibility:visible}
+.modal{position:fixed;left:0;right:0;bottom:0;max-width:440px;margin:0 auto;background:#fff;border-radius:24px 24px 0 0;transform:translateY(100%);transition:transform .32s var(--ease);z-index:21;padding:12px 20px 28px;max-height:86dvh;overflow-y:auto}
+.modal.on{transform:none}
+.grip{width:38px;height:5px;border-radius:3px;background:#E2E4E8;margin:0 auto 16px}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="body" id="body">
+<div class="wrap">
 
-    <!-- ============ DASHBOARD ============ -->
-    <section class="screen active" id="s-dashboard">
-      <div class="topbar center">
-        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-        <div class="logo"><div class="lt"><span class="r">R²</span><span class="o">'OTO</span></div><div class="tag">PILOTE TES FINANCES</div></div>
-        <button class="iconbtn plain bell" onclick="openDrawer()"><i data-lucide="bell"></i><span class="badge">3</span></button>
-      </div>
+  <!-- LOADING -->
+  <section class="screen on center" id="s-load"><div class="spin"></div></section>
 
-      <div class="pagehead"><h1>Tableau de bord</h1><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
-
-      <div class="hero reveal mb14">
-        <div>
-          <div class="lbl">Résultat global du mois</div>
-          <div class="val num"><span class="cu" data-to="65320">0</span><span class="c">DH</span></div>
-          <div class="delta"><i data-lucide="trending-up"></i>18% vs Avril</div>
-        </div>
-        <svg viewBox="0 0 108 66" preserveAspectRatio="none">
-          <path class="spark" d="M2,52 L16,44 L30,48 L44,30 L58,36 L72,20 L86,26 L106,10" fill="none" stroke="#D6001C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-
-      <div class="trio reveal mb14" style="transition-delay:.05s">
-        <div class="stat"><div class="k">Trésorerie disponible</div><div class="v blue num"><span class="cu" data-to="37850">0</span><span class="u">DH</span></div><i data-lucide="wallet"></i></div>
-        <div class="stat"><div class="k">À encaisser</div><div class="v num"><span class="cu" data-to="52600">0</span><span class="u">DH</span></div><i data-lucide="arrow-down-left"></i></div>
-        <div class="stat"><div class="k">À payer</div><div class="v red num"><span class="cu" data-to="126750">0</span><span class="u">DH</span></div><i data-lucide="arrow-up-right"></i></div>
-      </div>
-
-      <div class="alert reveal mb18" style="transition-delay:.1s" onclick="showScreen('creances')">
-        <i data-lucide="alert-triangle" class="w"></i>
-        <div class="txt">4 chèques à échéance dans les 7 prochains jours</div>
-        <i data-lucide="chevron-right" class="c"></i>
-      </div>
-
-      <div class="sect"><div class="t">Répartition des activités</div></div>
-      <div class="card donutwrap reveal mb18">
-        <svg class="donut" viewBox="0 0 140 140" data-segs='[{"v":28450,"color":"#D6001C"},{"v":31870,"color":"#14151C"},{"v":4000,"color":"#B6BAC4"}]'></svg>
-        <div class="legend">
-          <div class="row"><span class="dot" style="background:#D6001C"></span><span class="nm">R2 OTO</span><span class="am num">28 450 DH</span></div>
-          <div class="row"><span class="dot" style="background:#14151C"></span><span class="nm">Marchés publics</span><span class="am num">31 870 DH</span></div>
-          <div class="row"><span class="dot" style="background:#B6BAC4"></span><span class="nm">Dépenses perso.</span><span class="am num" style="color:var(--sub)">-4 000 DH</span></div>
-        </div>
-      </div>
-
-      <div class="sect"><div class="t">Aperçu rapide</div></div>
-      <div class="list quick reveal">
-        <div class="li" onclick="showScreen('creances')"><div class="ic"><i data-lucide="file-text"></i></div><div><div class="nm">Créances fournisseurs</div></div><div class="am red num">126 750 DH</div></div>
-        <div class="li" onclick="showScreen('marches')"><div class="ic"><i data-lucide="building-2"></i></div><div><div class="nm">Marchés en cours</div></div><div class="am num">2</div></div>
-        <div class="li" onclick="showScreen('personnel')"><div class="ic"><i data-lucide="user-round"></i></div><div><div class="nm">Dépenses personnelles</div></div><div class="am num">6 250 DH</div></div>
-      </div>
-    </section>
-
-    <!-- ============ R2 OTO ============ -->
-    <section class="screen" id="s-r2oto">
-      <div class="topbar center">
-        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-        <div class="title" style="color:var(--red);font-weight:800">R2 OTO</div>
-        <button class="iconbtn plain"><i data-lucide="sliders-horizontal"></i></button>
-      </div>
-      <div class="tabs" id="r2tabs">
-        <button class="on" data-t="syn">Synthèse</button>
-        <button data-t="ventes">Ventes</button>
-        <button data-t="achats">Achats / Charges</button>
-      </div>
-
-      <div id="r2-syn">
-        <div style="display:flex;justify-content:center;margin-bottom:14px"><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
-        <div class="sect"><div class="t">Synthèse du mois</div></div>
-        <div class="card syn reveal mb18">
-          <div class="c"><div class="k">Chiffre d'affaires</div><div class="v green num">78 450<span class="u">DH</span></div></div>
-          <div class="c"><div class="k">Charges totales</div><div class="v red num">50 000<span class="u">DH</span></div></div>
-          <div class="c"><div class="k">Gain réel</div><div class="v green num">28 450<span class="u">DH</span></div></div>
-        </div>
-
-        <div class="card chartcard reveal mb18">
-          <div class="hd"><div class="t">Évolution du gain (6 mois)</div><div class="selector" style="padding:6px 10px;font-size:12px">6 mois <i data-lucide="chevron-down"></i></div></div>
-          <svg viewBox="0 0 320 210" id="gainchart"></svg>
-        </div>
-
-        <div class="sect"><div class="t">Dernières opérations</div><div class="a">Voir tout</div></div>
-        <div class="list reveal" id="r2-ops"></div>
-      </div>
-    </section>
-
-    <!-- ============ MARCHÉS ============ -->
-    <section class="screen" id="s-marches">
-      <div class="topbar center">
-        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-        <div class="title">Marchés publics</div>
-        <button class="iconbtn plain"><i data-lucide="sliders-horizontal"></i></button>
-      </div>
-
-      <div class="sect"><div class="t">Résumé global</div></div>
-      <div class="card summary reveal mb18">
-        <div class="c"><div class="big num">2</div><div class="k">Marchés en cours</div></div>
-        <div class="c"><div class="big num">231 450<span class="u">DH</span></div><div class="k">Montant total des marchés</div></div>
-        <div class="c"><div class="big green num">145 200<span class="u">DH</span></div><div class="k">Total dépenses</div></div>
-        <div class="c"><div class="big green num">86 250<span class="u">DH</span></div><div class="k">Marge estimée globale</div></div>
-      </div>
-
-      <div class="sect"><div class="t">Mes marchés</div><div class="a">Voir tout</div></div>
-
-      <div class="card market reveal">
-        <div class="top">
-          <div><div class="ao">AO 149/DCL/2026</div><div class="desc">Construction école primaire - Khenifra</div></div>
-          <span class="chip enc">En cours</span>
-        </div>
-        <div class="bar"><span style="width:65%;background:linear-gradient(90deg,#D6001C,#12A150)"></span></div>
-        <div class="pctlbl">65%</div>
-        <div class="kv"><span class="k">Montant du marché</span><span class="v num">850 000 DH</span></div>
-        <div class="kv"><span class="k">Total dépenses</span><span class="v red num">512 350 DH</span></div>
-        <div class="kv"><span class="k">Paiements reçus</span><span class="v green num">320 000 DH</span></div>
-        <div class="kv"><span class="k">Marge estimée</span><span class="v red num">25.2%</span></div>
-      </div>
-
-      <div class="card market reveal" style="transition-delay:.05s">
-        <div class="top">
-          <div><div class="ao">AO 082/INDH/2026</div><div class="desc">Aménagement route - Région Khenifra</div></div>
-          <span class="chip enc">En cours</span>
-        </div>
-        <div class="bar"><span style="width:40%;background:var(--orange)"></span></div>
-        <div class="pctlbl">40%</div>
-        <div class="kv"><span class="k">Montant du marché</span><span class="v num">650 000 DH</span></div>
-        <div class="kv"><span class="k">Total dépenses</span><span class="v red num">245 800 DH</span></div>
-        <div class="kv"><span class="k">Paiements reçus</span><span class="v green num">150 000 DH</span></div>
-        <div class="kv"><span class="k">Marge estimée</span><span class="v green num">20.0%</span></div>
-      </div>
-    </section>
-
-    <!-- ============ CRÉANCES ============ -->
-    <section class="screen" id="s-creances">
-      <div class="topbar center">
-        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-        <div class="title">Créances fournisseurs</div>
-        <button class="iconbtn"><i data-lucide="plus"></i></button>
-      </div>
-      <div class="tabs" id="crtabs">
-        <button class="on" data-t="venir">À venir</button>
-        <button data-t="toutes">Toutes</button>
-        <button data-t="payees">Payées</button>
-      </div>
-
-      <div class="totcard">
-        <div class="l"><div class="k">TOTAL À PAYER</div><div class="v num">126 750 DH</div></div>
-        <div class="r"><div class="n num">4</div><div class="s">chèques à échéance ≤ 7 jours</div><i data-lucide="alert-triangle"></i></div>
-      </div>
-
-      <div id="cr-list"></div>
-    </section>
-
-    <!-- ============ PERSONNEL ============ -->
-    <section class="screen" id="s-personnel">
-      <div class="topbar center">
-        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
-        <div class="title">Dépenses personnelles</div>
-        <button class="iconbtn"><i data-lucide="plus"></i></button>
-      </div>
-      <div style="display:flex;justify-content:center;margin:2px 0 16px"><div class="selector">Mai 2026 <i data-lucide="chevron-down"></i></div></div>
-
-      <div class="card reveal mb18" style="padding:20px">
-        <div style="font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.04em">TOTAL DÉPENSES</div>
-        <div class="num" style="font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:4px">6 250 DH</div>
-        <div class="donutwrap" style="padding:16px 0 0">
-          <svg class="donut" viewBox="0 0 140 140" data-segs='[{"v":2100,"color":"#D6001C"},{"v":1550,"color":"#14151C"},{"v":1300,"color":"#9AA0AA"},{"v":700,"color":"#F17A8E"},{"v":600,"color":"#F6B8C4"}]'></svg>
-          <div class="legend">
-            <div class="row"><span class="dot" style="background:#D6001C"></span><span class="nm">Maison</span><span class="am num">2 100 DH</span><span class="pc num">33%</span></div>
-            <div class="row"><span class="dot" style="background:#14151C"></span><span class="nm">Voiture</span><span class="am num">1 550 DH</span><span class="pc num">25%</span></div>
-            <div class="row"><span class="dot" style="background:#9AA0AA"></span><span class="nm">Courses</span><span class="am num">1 300 DH</span><span class="pc num">21%</span></div>
-            <div class="row"><span class="dot" style="background:#F17A8E"></span><span class="nm">Santé</span><span class="am num">700 DH</span><span class="pc num">11%</span></div>
-            <div class="row"><span class="dot" style="background:#F6B8C4"></span><span class="nm">Loisirs</span><span class="am num">600 DH</span><span class="pc num">10%</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sect"><div class="t">Dernières dépenses</div><div class="a">Voir tout</div></div>
-      <div class="list reveal">
-        <div class="li"><div class="ic"><i data-lucide="shopping-cart"></i></div><div><div class="nm">Courses chez Marjane</div><div class="dt">31 Mai 2026</div></div><div class="am neg num">350 DH</div></div>
-        <div class="li"><div class="ic"><i data-lucide="fuel"></i></div><div><div class="nm">Carburant</div><div class="dt">30 Mai 2026</div></div><div class="am neg num">250 DH</div></div>
-        <div class="li"><div class="ic"><i data-lucide="zap"></i></div><div><div class="nm">Électricité</div><div class="dt">28 Mai 2026</div></div><div class="am neg num">600 DH</div></div>
-      </div>
-    </section>
-
-    <!-- ============ PLACEHOLDERS ============ -->
-    <section class="screen" id="s-situation">
-      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Situation financière</div><span class="spacer" style="max-width:40px"></span></div>
-      <div class="ph-screen"><i data-lucide="pie-chart"></i><h2>Situation financière</h2><p>Vue consolidée de tes trois activités, bilan et trésorerie. Écran à connecter aux données.</p></div>
-    </section>
-    <section class="screen" id="s-calendrier">
-      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Calendrier des échéances</div><span class="spacer" style="max-width:40px"></span></div>
-      <div class="ph-screen"><i data-lucide="calendar-days"></i><h2>Calendrier des échéances</h2><p>Tous tes chèques et paiements à venir, mois par mois. Écran à connecter aux données.</p></div>
-    </section>
-    <section class="screen" id="s-documents">
-      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Documents</div><span class="spacer" style="max-width:40px"></span></div>
-      <div class="ph-screen"><i data-lucide="folder"></i><h2>Documents</h2><p>Factures, CPS, bordereaux et pièces des marchés. Écran à connecter aux données.</p></div>
-    </section>
-    <section class="screen" id="s-parametres">
-      <div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Paramètres</div><span class="spacer" style="max-width:40px"></span></div>
-      <div class="ph-screen"><i data-lucide="settings"></i><h2>Paramètres</h2><p>Profil, TVA, catégories, sauvegarde. Écran à connecter aux données.</p></div>
-    </section>
-
-  </div>
-
-  <!-- ============ BOTTOM NAV ============ -->
-  <div class="nav" id="nav">
-    <button class="on" data-s="dashboard" onclick="showScreen('dashboard')"><i data-lucide="home"></i><span>Dashboard</span></button>
-    <button data-s="r2oto" onclick="showScreen('r2oto')"><i data-lucide="shopping-cart"></i><span>R2 OTO</span></button>
-    <button data-s="marches" onclick="showScreen('marches')"><i data-lucide="building-2"></i><span>Marchés</span></button>
-    <button data-s="personnel" onclick="showScreen('personnel')"><i data-lucide="user"></i><span>Personnel</span></button>
-    <button onclick="openDrawer()"><i data-lucide="more-horizontal"></i><span>Plus</span></button>
-  </div>
-
-  <!-- ============ DRAWER ============ -->
-  <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
-  <aside class="drawer" id="drawer">
-    <div class="dhead"><div class="dlogo"><div class="lt">R²'OTO</div><div class="tag">PILOTE TES FINANCES</div></div></div>
-    <div class="prof"><div class="av">SR</div><div><div class="nmm">So Refa</div><div class="role">Dirigeant</div></div></div>
-    <div class="items" id="ditems">
-      <div class="ditem on" data-s="dashboard"><i data-lucide="layout-dashboard"></i>Tableau de bord</div>
-      <div class="ditem" data-s="r2oto"><i data-lucide="shopping-cart"></i>R2 OTO</div>
-      <div class="ditem" data-s="creances"><i data-lucide="file-text"></i>Créances fournisseurs</div>
-      <div class="ditem" data-s="marches"><i data-lucide="building-2"></i>Marchés publics</div>
-      <div class="ditem" data-s="personnel"><i data-lucide="user"></i>Dépenses personnelles</div>
-      <div class="ditem" data-s="situation"><i data-lucide="pie-chart"></i>Situation financière</div>
-      <div class="ditem" data-s="calendrier"><i data-lucide="calendar-days"></i>Calendrier des échéances</div>
-      <div class="ditem" data-s="documents"><i data-lucide="folder"></i>Documents</div>
-      <div class="ditem" data-s="parametres"><i data-lucide="settings"></i>Paramètres</div>
-      <div class="ditem logout"><i data-lucide="log-out"></i>Déconnexion</div>
+  <!-- CONFIG NEEDED -->
+  <section class="screen center" id="s-config">
+    <div class="logo"><div class="lt"><span class="r">W</span>CR</div><div class="tag">WORKING CAPITAL REQUIREMENT</div></div>
+    <div class="card">
+      <h2>Configuration requise</h2>
+      <p class="muted" style="margin-top:10px">Colle ta <b>Project URL</b> et ta clé <b>Publishable</b> (sb_publishable_…) en haut du fichier, dans le bloc <b>CONFIG</b>, puis redéploie. La clé secrète ne doit jamais être utilisée ici.</p>
     </div>
-  </aside>
+  </section>
+
+  <!-- AUTH -->
+  <section class="screen center" id="s-auth">
+    <div class="logo"><div class="lt"><span class="r">W</span>CR</div><div class="tag">WORKING CAPITAL REQUIREMENT</div></div>
+    <div class="card">
+      <div class="segtop" id="authseg">
+        <button class="on" data-m="login">Connexion</button>
+        <button data-m="signup">Inscription</button>
+      </div>
+      <div class="err" id="auth-err"></div>
+      <div class="field" id="f-name-wrap" style="display:none"><label>Nom complet</label><input id="a-name" type="text" placeholder="Ton nom" autocomplete="name"></div>
+      <div class="field"><label>Email</label><input id="a-email" type="email" placeholder="ton@email.com" autocomplete="email"></div>
+      <div class="field"><label>Mot de passe</label><input id="a-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn primary" id="a-submit" onclick="submitAuth()">Se connecter</button>
+      <div class="link" id="a-switch"></div>
+    </div>
+  </section>
+
+  <!-- PENDING -->
+  <section class="screen center" id="s-pending">
+    <div class="card" style="text-align:center">
+      <div class="iconbig wait"><i data-lucide="hourglass"></i></div>
+      <h2>En attente d'autorisation</h2>
+      <p class="muted" style="margin-top:10px">Ton compte a bien été créé. Il doit être <b>approuvé par l'administrateur</b> avant que tu puisses accéder à l'application.</p>
+      <button class="btn ghost" style="margin-top:20px" onclick="signOut()">Se déconnecter</button>
+    </div>
+  </section>
+
+  <!-- ONBOARDING -->
+  <section class="screen center" id="s-onboard">
+    <div class="logo"><div class="lt"><span class="r">W</span>CR</div></div>
+    <div class="card">
+      <h2>Bienvenue 👋</h2>
+      <p class="muted" style="margin:8px 0 20px">Configure ton espace. Tu pourras tout modifier plus tard.</p>
+      <div class="field"><label>Nom de ta société</label><input id="o-company" type="text" placeholder="Ex : R2 OTO" autocomplete="off"></div>
+      <div class="field"><label>Tes points (magasins, activités… — comme tu veux)</label><input id="o-points" type="text" placeholder="Ex : Comptoir Khénifra" autocomplete="off"></div>
+      <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin:6px 0 10px">Tes besoins à suivre</label>
+      <div id="o-besoins"></div>
+      <button class="addb" onclick="addBesoin()"><i data-lucide="plus"></i>Ajouter un besoin</button>
+      <button class="btn primary" style="margin-top:20px" id="o-submit" onclick="saveOnboard()">Créer mon espace</button>
+    </div>
+  </section>
+
+  <!-- APP HOME -->
+  <section class="screen" id="s-home">
+    <div class="topbar">
+      <div class="lt"><span class="r">W</span>CR</div>
+      <div class="spacer"></div>
+      <button class="iconbtn" id="admin-btn" style="display:none" onclick="openAdmin()"><i data-lucide="shield-check"></i></button>
+      <button class="iconbtn" onclick="signOut()"><i data-lucide="log-out"></i></button>
+    </div>
+    <div class="content">
+      <div class="hi" id="home-hi">Bonjour</div>
+      <div class="hidate" id="home-date"></div>
+
+      <div class="block">
+        <div class="h">Mon espace</div>
+        <div class="card">
+          <div class="kv"><span class="k">Société</span><span class="v" id="home-company">—</span></div>
+          <div class="kv"><span class="k">Points</span><span class="v" id="home-points">—</span></div>
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="h">Mes besoins</div>
+        <div class="card"><div class="chiplist" id="home-besoins"></div></div>
+      </div>
+
+      <div class="block">
+        <div class="card" style="text-align:center;background:linear-gradient(180deg,#fff,#FBFBFC)">
+          <p class="muted">Ton compte est prêt ✅<br>Les volets financiers (R2 OTO, Créances, Marchés, Personnel) arrivent à la prochaine étape.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ADMIN MODAL -->
+<div class="scrim" id="admin-scrim" onclick="closeAdmin()"></div>
+<div class="modal" id="admin-modal">
+  <div class="grip"></div>
+  <h2>Administration</h2>
+  <p class="muted" style="margin:6px 0 16px">Approuve ou bloque les membres de la famille.</p>
+  <div id="admin-list"></div>
 </div>
 
 <script>
-const fmt = n => Math.round(n).toLocaleString('fr-FR').replace(/\u00A0/g,' ');
-const MAIN = ['dashboard','r2oto','marches','personnel'];
+/* ======================= CONFIG ======================= */
+/* Colle ci-dessous TA Project URL et TA clé Publishable (sb_publishable_...) */
+const SUPABASE_URL = "https://hsgrkdfyshpksydujgdw.supabase.co";
+const SUPABASE_KEY = "COLLE_ICI_TA_CLE_PUBLISHABLE";
+/* ===================================================== */
 
-/* ---------- data ---------- */
-const R2OPS = [
-  {i:'receipt', t:'Vente - Facture FA2505-124', a:'1 850 DH', cls:'pos', k:'ventes'},
-  {i:'truck', t:'Achat - Fournisseur Auto Parts', a:'-2 450 DH', cls:'neg', k:'achats'},
-  {i:'home', t:'Charge - Loyer', a:'-3 000 DH', cls:'neg', k:'achats'},
-  {i:'receipt', t:'Vente - Facture FA2505-123', a:'2 150 DH', cls:'pos', k:'ventes'},
-];
-const CREANCES = [
-  {sup:'Auto Parts Maroc', ini:'AP', amt:'18 500 DH', chq:'215487', date:'01/06/2026', due:'1 jour', dc:'d1', st:'venir'},
-  {sup:'Sodipièces', ini:'SO', amt:'24 000 DH', chq:'215488', date:'03/06/2026', due:'3 jours', dc:'d3', st:'venir'},
-  {sup:'Batteries Expert', ini:'BE', amt:'12 750 DH', chq:'215489', date:'07/06/2026', due:'7 jours', dc:'d7', st:'venir'},
-  {sup:'Lubri Maroc', ini:'LM', amt:'15 000 DH', chq:'215490', date:'12/06/2026', due:'12 jours', dc:'d12', st:'venir'},
-  {sup:'Filtres Pro', ini:'FP', amt:'8 000 DH', chq:'215480', date:'20/05/2026', due:'Payé', dc:'d12', st:'payee'},
-  {sup:'Huiles Sud', ini:'HS', amt:'6 500 DH', chq:'215479', date:'18/05/2026', due:'Payé', dc:'d12', st:'payee'},
-];
+const configOK = SUPABASE_URL.startsWith("https://") && SUPABASE_KEY.startsWith("sb_");
+let sb=null, me=null;
+if(configOK){ sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
 
-/* ---------- build R2 ops ---------- */
-function renderR2(tab){
-  const box=document.getElementById('r2-ops');
-  const items = tab==='syn' ? R2OPS : R2OPS.filter(o=>o.k===tab);
-  box.innerHTML = items.map(o=>`
-    <div class="li"><div class="ic"><i data-lucide="${o.i}"></i></div>
-    <div><div class="nm">${o.t}</div></div>
-    <div class="am ${o.cls} num">${o.a}</div></div>`).join('') || `<div class="empty"><i data-lucide="inbox"></i><p>Aucune opération</p></div>`;
+const $=id=>document.getElementById(id);
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));lucide.createIcons();}
+function showErr(msg){const e=$('auth-err');e.textContent=msg;e.classList.add('on');}
+function clearErr(){$('auth-err').classList.remove('on');}
+
+/* ---- auth mode toggle ---- */
+let authMode='login';
+document.querySelectorAll('#authseg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#authseg button').forEach(x=>x.classList.toggle('on',x===b));
+  authMode=b.dataset.m;clearErr();
+  $('f-name-wrap').style.display=authMode==='signup'?'':'none';
+  $('a-submit').textContent=authMode==='signup'?'Créer mon compte':'Se connecter';
+  $('a-pass').autocomplete=authMode==='signup'?'new-password':'current-password';
+  $('a-switch').innerHTML=authMode==='signup'
+    ?'Déjà un compte ? <a onclick="setMode(\'login\')">Se connecter</a>'
+    :'Pas de compte ? <a onclick="setMode(\'signup\')">Créer un compte</a>';
+});
+function setMode(m){document.querySelector(`#authseg button[data-m="${m}"]`).click();}
+
+async function submitAuth(){
+  clearErr();
+  const email=$('a-email').value.trim(), pass=$('a-pass').value, name=$('a-name').value.trim();
+  if(!email||!pass){showErr('Email et mot de passe requis.');return;}
+  const btn=$('a-submit');btn.disabled=true;btn.textContent='...';
+  try{
+    if(authMode==='signup'){
+      if(pass.length<6){showErr('Mot de passe : 6 caractères minimum.');return;}
+      const {error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+      if(error){showErr(traduire(error.message));return;}
+      await route();
+    }else{
+      const {error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error){showErr(traduire(error.message));return;}
+      await route();
+    }
+  }catch(e){showErr('Erreur réseau. Vérifie ta connexion.');}
+  finally{btn.disabled=false;btn.textContent=authMode==='signup'?'Créer mon compte':'Se connecter';}
+}
+function traduire(m){
+  if(/Invalid login/i.test(m))return 'Email ou mot de passe incorrect.';
+  if(/already registered|already exists/i.test(m))return 'Cet email a déjà un compte.';
+  if(/Email not confirmed/i.test(m))return 'Email non confirmé. Désactive la confirmation email dans Supabase pour une famille.';
+  return m;
+}
+async function signOut(){await sb.auth.signOut();me=null;show('s-auth');setMode('login');}
+
+/* ---- profile ---- */
+async function loadProfile(uid){
+  const {data,error}=await sb.from('profiles').select('*').eq('id',uid).single();
+  if(error)return null; return data;
+}
+
+/* ---- routing ---- */
+async function route(){
+  if(!configOK){show('s-config');return;}
+  show('s-load');
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){show('s-auth');setMode('login');return;}
+  me=await loadProfile(session.user.id);
+  if(!me){ // profil pas encore créé (trigger) → petite attente
+    await new Promise(r=>setTimeout(r,700)); me=await loadProfile(session.user.id);
+  }
+  if(!me){show('s-auth');showErr('Profil introuvable. Réessaie.');return;}
+  if(me.status!=='approved'){show('s-pending');return;}
+  if(!me.company_name){renderOnboard();show('s-onboard');return;}
+  await renderHome();show('s-home');
+}
+
+/* ---- onboarding ---- */
+function besoinRow(v){const d=document.createElement('div');d.className='brow';
+  d.innerHTML=`<input type="text" placeholder="Ex : Gain R2 OTO" value="${v||''}"><button class="del" onclick="this.parentElement.remove()"><i data-lucide="trash-2"></i></button>`;
+  return d;}
+function addBesoin(v){$('o-besoins').appendChild(besoinRow(v));lucide.createIcons();}
+function renderOnboard(){
+  $('o-besoins').innerHTML='';
+  ['Gain R2 OTO','Créances fournisseurs','Marchés publics','Dépenses personnelles'].forEach(addBesoin);
+}
+async function saveOnboard(){
+  const company=$('o-company').value.trim(), points=$('o-points').value.trim();
+  if(!company){$('o-company').focus();return;}
+  const btn=$('o-submit');btn.disabled=true;btn.textContent='...';
+  try{
+    await sb.from('profiles').update({company_name:company,points}).eq('id',me.id);
+    const noms=[...document.querySelectorAll('#o-besoins input')].map(i=>i.value.trim()).filter(Boolean);
+    if(noms.length){await sb.from('besoins').insert(noms.map((n,i)=>({user_id:me.id,nom:n,ordre:i})));}
+    await route();
+  }catch(e){alert('Erreur à l\'enregistrement. Réessaie.');}
+  finally{btn.disabled=false;btn.textContent='Créer mon espace';}
+}
+
+/* ---- home ---- */
+async function renderHome(){
+  $('home-hi').textContent='Bonjour '+((me.full_name||'').split(' ')[0]||'');
+  $('home-date').textContent="Aujourd'hui : "+new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  $('home-company').textContent=me.company_name||'—';
+  $('home-points').textContent=me.points||'—';
+  const {data:bes}=await sb.from('besoins').select('*').eq('user_id',me.id).order('ordre');
+  $('home-besoins').innerHTML=(bes&&bes.length)?bes.map(b=>`<span class="chip2">${b.nom}</span>`).join(''):'<span class="muted">Aucun besoin</span>';
+  $('admin-btn').style.display=me.role==='admin'?'':'none';
   lucide.createIcons();
 }
-document.getElementById('r2-syn'); // syn container always visible; tabs filter ops
-document.querySelectorAll('#r2tabs button').forEach(b=>{
-  b.onclick=()=>{
-    document.querySelectorAll('#r2tabs button').forEach(x=>x.classList.toggle('on',x===b));
-    const t=b.dataset.t;
-    // hide synthèse/chart blocks when not on Synthèse
-    const syn=document.querySelectorAll('#r2-syn > *');
-    const showAll = t==='syn';
-    document.querySelector('#r2-syn .syn').closest('.card').style.display = showAll?'':'none';
-    document.querySelector('#gainchart').closest('.card').style.display = showAll?'':'none';
-    document.querySelectorAll('#r2-syn > div')[0].style.display = showAll?'':'none'; // month selector
-    renderR2(t==='syn'?'syn':t);
-    document.querySelector('#r2-syn .sect .t').textContent = showAll?'Dernières opérations':(t==='ventes'?'Ventes':'Achats & charges');
-  };
-});
 
-/* ---------- build créances ---------- */
-function renderCreances(tab){
-  const box=document.getElementById('cr-list');
-  let items = tab==='toutes'?CREANCES : CREANCES.filter(c=>c.st===tab);
-  if(tab==='payees') items = CREANCES.filter(c=>c.st==='payee');
-  if(!items.length){box.innerHTML=`<div class="empty"><i data-lucide="check-circle-2"></i><p>Aucun chèque dans cet onglet</p></div>`;lucide.createIcons();return;}
-  box.innerHTML = items.map(c=>`
-    <div class="creance">
-      <div class="lg">${c.ini}</div>
-      <div class="mid"><div class="sup">${c.sup}</div><div class="chq">Chèque N° ${c.chq}</div></div>
-      <div class="rt"><div class="amt num">${c.amt}</div><div class="date num">${c.date}</div><div><span class="due ${c.dc}">${c.due}</span></div></div>
-    </div>`).join('');
+/* ---- admin ---- */
+async function openAdmin(){
+  $('admin-scrim').classList.add('on');$('admin-modal').classList.add('on');
+  $('admin-list').innerHTML='<div class="spin"></div>';
+  const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  if(error){$('admin-list').innerHTML='<p class="muted">Erreur de chargement.</p>';return;}
+  $('admin-list').innerHTML=data.map(p=>{
+    const ini=((p.full_name||p.email||'?').trim()[0]||'?').toUpperCase();
+    const badge=p.status==='approved'?'<span class="badge appr">Approuvé</span>':p.status==='blocked'?'<span class="badge block">Bloqué</span>':'<span class="badge pend">En attente</span>';
+    const acts=p.id===me.id?'<span class="muted" style="font-size:12px">toi</span>':
+      (p.status!=='approved'?`<button class="btn ok sm" onclick="setStatus('${p.id}','approved')">Approuver</button>`:'')+
+      (p.status!=='blocked'?`<button class="btn ghost sm" onclick="setStatus('${p.id}','blocked')">Bloquer</button>`:`<button class="btn ok sm" onclick="setStatus('${p.id}','approved')">Réactiver</button>`);
+    return `<div class="arow"><div class="av">${ini}</div><div><div class="nm">${p.full_name||'(sans nom)'} ${badge}</div><div class="em">${p.email||''} · ${p.company_name||'société non définie'}</div></div><div class="act">${acts}</div></div>`;
+  }).join('')||'<p class="muted">Aucun membre.</p>';
   lucide.createIcons();
 }
-document.querySelectorAll('#crtabs button').forEach(b=>{
-  b.onclick=()=>{document.querySelectorAll('#crtabs button').forEach(x=>x.classList.toggle('on',x===b));renderCreances(b.dataset.t);};
-});
-
-/* ---------- donuts ---------- */
-function drawDonut(el){
-  if(el.dataset.done) return; el.dataset.done=1;
-  const segs=JSON.parse(el.dataset.segs);
-  const total=segs.reduce((s,x)=>s+x.v,0);
-  const r=54,C=2*Math.PI*r,ns='http://www.w3.org/2000/svg';let off=0;
-  segs.forEach((s,idx)=>{
-    const len=C*(s.v/total);
-    const c=document.createElementNS(ns,'circle');
-    c.setAttribute('cx',70);c.setAttribute('cy',70);c.setAttribute('r',r);
-    c.setAttribute('fill','none');c.setAttribute('stroke',s.color);c.setAttribute('stroke-width',20);
-    c.setAttribute('stroke-linecap','butt');
-    c.setAttribute('stroke-dasharray',`0 ${C}`);
-    c.setAttribute('stroke-dashoffset',-off);
-    c.setAttribute('transform','rotate(-90 70 70)');
-    c.style.transition='stroke-dasharray .8s var(--ease)';c.style.transitionDelay=(idx*.12)+'s';
-    el.appendChild(c);
-    requestAnimationFrame(()=>requestAnimationFrame(()=>c.setAttribute('stroke-dasharray',`${len} ${C-len}`)));
-    off+=len;
-  });
+function closeAdmin(){$('admin-scrim').classList.remove('on');$('admin-modal').classList.remove('on');}
+async function setStatus(id,status){
+  await sb.from('profiles').update({status}).eq('id',id);
+  openAdmin();
 }
 
-/* ---------- gain line chart ---------- */
-function drawGain(){
-  const svg=document.getElementById('gainchart');
-  if(svg.dataset.done) return; svg.dataset.done=1;
-  const vals=[14,21,17,24,22,28.45], max=40, months=['Déc','Jan','Fév','Mar','Avr','Mai'];
-  const x0=38,x1=310,y0=15,y1=170;
-  const X=i=>x0+(x1-x0)*i/5, Y=v=>y1-(v/max)*(y1-y0);
-  let g='';
-  [40,30,20,10,0].forEach(v=>{const y=Y(v);g+=`<line x1="${x0}" y1="${y}" x2="${x1}" y2="${y}" stroke="rgba(20,21,28,.06)" stroke-width="1"/><text x="${x0-8}" y="${y+3.5}" text-anchor="end" font-size="9" fill="#8A8E99">${v}K</text>`;});
-  months.forEach((m,i)=>{g+=`<text x="${X(i)}" y="196" text-anchor="middle" font-size="9.5" fill="#8A8E99">${m}</text>`;});
-  const pts=vals.map((v,i)=>[X(i),Y(v)]);
-  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
-  const area=line+` L${X(5)},${y1} L${x0},${y1} Z`;
-  g+=`<defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D6001C" stop-opacity=".14"/><stop offset="1" stop-color="#D6001C" stop-opacity="0"/></linearGradient></defs>`;
-  g+=`<path d="${area}" fill="url(#gg)"/>`;
-  g+=`<path id="gline" d="${line}" fill="none" stroke="#D6001C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  pts.forEach(p=>g+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.4" fill="#fff" stroke="#D6001C" stroke-width="2.2"/>`);
-  svg.innerHTML=g;
-  const ln=document.getElementById('gline'),L=ln.getTotalLength();
-  ln.style.strokeDasharray=L;ln.style.strokeDashoffset=L;ln.style.transition='stroke-dashoffset 1.3s var(--ease)';
-  requestAnimationFrame(()=>requestAnimationFrame(()=>ln.style.strokeDashoffset=0));
-}
-
-/* ---------- counters ---------- */
-function countUp(el){
-  const to=+el.dataset.to;el.dataset.run=1;const t0=performance.now(),d=900;
-  (function s(t){const p=Math.min((t-t0)/d,1),e=1-Math.pow(1-p,4);el.textContent=fmt(to*e);if(p<1)requestAnimationFrame(s);})(performance.now());
-}
-/* ---------- reveal ---------- */
-function reveal(){document.querySelectorAll('.screen.active .reveal').forEach(el=>{if(el.getBoundingClientRect().top<window.innerHeight-30)el.classList.add('in');});}
-document.getElementById('body').addEventListener('scroll',reveal);
-
-/* ---------- navigation ---------- */
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active','s-'+id===s.id));
-  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===id));
-  document.querySelectorAll('#ditems .ditem').forEach(d=>d.classList.toggle('on',d.dataset.s===id));
-  document.getElementById('body').scrollTop=0;
-  closeDrawer();
-  requestAnimationFrame(()=>{
-    lucide.createIcons(); reveal();
-    document.querySelectorAll('.screen.active .cu:not([data-run])').forEach(countUp);
-    document.querySelectorAll('.screen.active .donut').forEach(drawDonut);
-    if(id==='r2oto') drawGain();
-  });
-}
-function openDrawer(){document.getElementById('scrim').classList.add('open');document.getElementById('drawer').classList.add('open');}
-function closeDrawer(){document.getElementById('scrim').classList.remove('open');document.getElementById('drawer').classList.remove('open');}
-document.querySelectorAll('#ditems .ditem[data-s]').forEach(d=>d.onclick=()=>showScreen(d.dataset.s));
-
-/* ---------- init ---------- */
-window.addEventListener('load',()=>{
-  lucide.createIcons();
-  renderR2('syn'); renderCreances('venir');
-  reveal();
-  document.querySelectorAll('.screen.active .cu').forEach(countUp);
-  document.querySelectorAll('.screen.active .donut').forEach(drawDonut);
-  // animate hero spark
-  const sp=document.querySelector('.spark');if(sp){const L=sp.getTotalLength();sp.style.strokeDasharray=L;sp.style.strokeDashoffset=L;sp.style.transition='stroke-dashoffset 1.2s var(--ease)';requestAnimationFrame(()=>requestAnimationFrame(()=>sp.style.strokeDashoffset=0));}
-});
+/* ---- init ---- */
+window.addEventListener('load',()=>{lucide.createIcons();route();});
 </script>
 </body>
 </html>
