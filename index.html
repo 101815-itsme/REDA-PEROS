@@ -622,7 +622,8 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
     <div class="grip"></div>
     <h3 id="pgTitle">Nouveau paiement</h3>
     <div class="field"><label>Fournisseur</label><select id="pg-four" onchange="pgRenderList()" style="width:100%;border:1.5px solid var(--line);background:#FAFAFB;border-radius:13px;padding:14px 15px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none"></select></div>
-    <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin:4px 0 6px">Factures à régler</label>
+    <div style="background:#FFF7E6;border:1px solid #F3D38A;border-radius:12px;padding:10px 13px;margin:2px 0 10px;font-size:12.5px;color:#8a5b00;font-weight:600;display:flex;align-items:center;gap:7px"><i data-lucide="hand-pointer" style="width:15px;height:15px"></i>Coche uniquement les factures à inclure dans CE paiement.</div>
+    <div id="pg-selinfo" style="font-size:12.5px;font-weight:700;color:var(--sub);margin:0 2px 8px">0 facture sélectionnée</div>
     <div id="pg-list"></div>
     <div class="field" style="margin-top:14px"><label>Total du paiement</label><input id="pg-total" type="text" readonly style="font-weight:800;background:#F2F3F5"></div>
     <div class="seg" id="pgModeSeg"><button class="on" data-mode="cheque">Chèque</button><button data-mode="espece">Espèces</button></div>
@@ -988,7 +989,7 @@ function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.f
   $('pg-list').innerHTML=cands.length?cands.map(f=>{const ch=editingPG&&f.paiement_id===editingPG;return '<label style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line2);cursor:pointer"><input type="checkbox" class="pgchk" data-id="'+f.id+'" data-m="'+f.montant+'" '+(ch?'checked':'')+' onchange="pgTotal()" style="width:20px;height:20px;accent-color:var(--red);flex:0 0 20px"><span style="flex:1;font-size:14px;font-weight:600">'+(f.reference?('N° '+f.reference):'Facture')+' <span style="color:var(--sub);font-weight:400">· '+frDate(f.date_facture)+'</span></span><span class="num" style="font-weight:700">'+fmt(f.montant)+' DH</span></label>';}).join('')
     :'<div style="padding:12px 0;color:var(--sub);font-size:13px">Aucune facture non réglée pour ce fournisseur.</div>';
   pgTotal();}
-function pgTotal(){let t=0;document.querySelectorAll('.pgchk:checked').forEach(c=>t+=parseFloat(c.dataset.m));if($('pg-total'))$('pg-total').value=fmt(t)+' DH';return t;}
+function pgTotal(){let t=0,n=0;document.querySelectorAll('.pgchk:checked').forEach(c=>{t+=parseFloat(c.dataset.m);n++;});if($('pg-total'))$('pg-total').value=fmt(t)+' DH';const si=$('pg-selinfo');if(si){si.textContent=n+' facture'+(n>1?'s':'')+' sélectionnée'+(n>1?'s':'')+(n?' · '+fmt(t)+' DH':'');si.style.color=n?'var(--red)':'var(--sub)';}return t;}
 async function savePG(){const fournisseur=$('pg-four').value;const checked=[...document.querySelectorAll('.pgchk:checked')].map(c=>c.dataset.id);if(!checked.length){alert('Sélectionne au moins une facture.');return;}
   const montant=pgTotal(),mode=pgMode,chq=mode==='cheque'?$('pg-chq').value.trim():null,date_paiement=$('pg-date').value||todayISO();
   const pdata={fournisseur,mode,chq,date_paiement,montant};let payId=editingPG;
