@@ -608,6 +608,8 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
     <div class="field amt"><label>Montant total (DH)</label><input id="fa-montant" type="number" inputmode="decimal" placeholder="0"></div>
     <div class="field"><label>Date de la facture</label><input id="fa-date" type="date"></div>
     <div class="field"><label>N° de facture (facultatif)</label><input id="fa-ref" type="text" autocomplete="off" placeholder="Ex : FA2510-014"></div>
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin:2px 0 8px">Mode de paiement prévu</label>
+    <div class="seg" id="faModeSeg" style="margin-bottom:4px"><button class="on" data-mode="cheque">Chèque</button><button data-mode="espece">Espèces</button></div>
     <div class="sheet-actions">
       <button class="btn del" id="fa-del" style="display:none" onclick="deleteFA()"><i data-lucide="trash-2" style="width:18px;height:18px"></i></button>
       <button class="btn ghost" onclick="closeFA()">Annuler</button>
@@ -953,7 +955,7 @@ function renderFactures(){
   const box=$('fp-body');
   if(fptab==='factures'){
     const items=FA.slice().sort((a,b)=>(b.date_facture||'').localeCompare(a.date_facture||''));
-    box.innerHTML=items.length?items.map(f=>{const paid=!!f.paiement_id;return '<div class="creance" onclick="openFA(\''+f.id+'\')"><div class="lg">'+initials(f.fournisseur)+'</div><div class="mid"><div class="sup">'+(f.fournisseur||'')+'</div><div class="chq">'+(f.reference?('N° '+f.reference+' · '):'')+frDate(f.date_facture)+'</div></div><div class="rt"><div class="amt num">'+fmt(f.montant)+' DH</div><div><span class="due '+(paid?'paid':'d12')+'">'+(paid?'Payée':'À payer')+'</span></div></div></div>';}).join('')
+    box.innerHTML=items.length?items.map(f=>{const paid=!!f.paiement_id;return '<div class="creance" onclick="openFA(\''+f.id+'\')"><div class="lg">'+initials(f.fournisseur)+'</div><div class="mid"><div class="sup">'+(f.fournisseur||'')+'</div><div class="chq">'+(f.reference?('N° '+f.reference+' · '):'')+frDate(f.date_facture)+' · '+((f.mode||'cheque')==='espece'?'Espèces':'Chèque')+'</div></div><div class="rt"><div class="amt num">'+fmt(f.montant)+' DH</div><div><span class="due '+(paid?'paid':'d12')+'">'+(paid?'Payée':'À payer')+'</span></div></div></div>';}).join('')
       :'<div class="empty"><i data-lucide="file-text"></i><p>Aucune facture — appuie sur +</p></div>';
   }else{
     const items=PG.slice().sort((a,b)=>(b.date_paiement||'').localeCompare(a.date_paiement||''));
@@ -963,29 +965,36 @@ function renderFactures(){
   lucide.createIcons();
 }
 /* --- facture CRUD --- */
-let editingFA=null;
+let editingFA=null,faMode='cheque';
+document.querySelectorAll('#faModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#faModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');faMode=b.dataset.mode;});
+function setFAMode(m){faMode=m;document.querySelectorAll('#faModeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));}
 function openFA(id){editingFA=(typeof id==='string')?id:null;const f=editingFA?FA.find(x=>x.id===editingFA):null;
-  $('faTitle').textContent=f?'Modifier la facture':'Nouvelle facture';$('fa-four').value=f?(f.fournisseur||''):'';$('fa-montant').value=f?f.montant:'';$('fa-date').value=f?(f.date_facture||todayISO()):todayISO();$('fa-ref').value=f?(f.reference||''):'';
+  $('faTitle').textContent=f?'Modifier la facture':'Nouvelle facture';$('fa-four').value=f?(f.fournisseur||''):'';$('fa-montant').value=f?f.montant:'';$('fa-date').value=f?(f.date_facture||todayISO()):todayISO();$('fa-ref').value=f?(f.reference||''):'';setFAMode(f?(f.mode||'cheque'):'cheque');
   $('fa-del').style.display=f?'':'none';$('sheetScrimFA').classList.add('open');$('sheetFA').classList.add('open');lucide.createIcons();}
 function closeFA(){$('sheetScrimFA').classList.remove('open');$('sheetFA').classList.remove('open');}
 async function saveFA(){const fournisseur=$('fa-four').value.trim()||'(fournisseur)';const montant=parseFloat($('fa-montant').value);const date_facture=$('fa-date').value||todayISO();const reference=$('fa-ref').value.trim();if(!montant||montant<=0){$('fa-montant').focus();return;}
-  const f={fournisseur,montant,date_facture,reference};
+  const f={fournisseur,montant,date_facture,reference,mode:faMode};
   if(editingFA){if(await dbUpdate('factures',editingFA,f))Object.assign(FA.find(x=>x.id===editingFA),f);}
   else{const row=await dbInsert('factures',f);if(row)FA.push(row);}
   closeFA();renderFactures();}
 async function deleteFA(){if(editingFA&&await dbDelete('factures',editingFA))FA=FA.filter(x=>x.id!==editingFA);closeFA();renderFactures();}
 /* --- paiement groupé --- */
 let editingPG=null,pgMode='cheque';
-document.querySelectorAll('#pgModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');pgMode=b.dataset.mode;$('pg-chq-wrap').style.display=pgMode==='cheque'?'':'none';});
+document.querySelectorAll('#pgModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');pgMode=b.dataset.mode;$('pg-chq-wrap').style.display=pgMode==='cheque'?'':'none';pgRefresh();});
 function setPGMode(m){pgMode=m;document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));$('pg-chq-wrap').style.display=m==='cheque'?'':'none';}
+function fmode(f){return f.mode||'cheque';}
+function pgRefresh(){const p=editingPG?PG.find(x=>x.id===editingPG):null;const prev=$('pg-four').value;
+  let fours=[...new Set(FA.filter(f=>!f.paiement_id&&fmode(f)===pgMode).map(f=>f.fournisseur).filter(Boolean))];
+  if(p&&p.fournisseur&&!fours.includes(p.fournisseur))fours.unshift(p.fournisseur);
+  const keep=fours.includes(prev)?prev:(p?p.fournisseur:fours[0]);
+  $('pg-four').innerHTML=fours.length?fours.map(f=>'<option'+(f===keep?' selected':'')+'>'+f+'</option>').join(''):'<option value="">(aucune facture '+(pgMode==='cheque'?'chèque':'espèces')+' à payer)</option>';
+  pgRenderList();}
 function openPG(id){editingPG=(typeof id==='string')?id:null;const p=editingPG?PG.find(x=>x.id===editingPG):null;
   $('pgTitle').textContent=p?'Modifier le paiement':'Nouveau paiement';
-  const dus=fournisseursDus();let fours=Object.keys(dus);if(p&&p.fournisseur&&!fours.includes(p.fournisseur))fours.unshift(p.fournisseur);
-  $('pg-four').innerHTML=fours.length?fours.map(f=>'<option'+((p&&p.fournisseur===f)?' selected':'')+'>'+f+'</option>').join(''):'<option value="">(aucune facture à payer)</option>';
   setPGMode(p?p.mode:'cheque');$('pg-chq').value=p?(p.chq||''):'';$('pg-date').value=p?(p.date_paiement||todayISO()):todayISO();$('pg-del').style.display=p?'':'none';
-  pgRenderList();$('sheetScrimPG').classList.add('open');$('sheetPG').classList.add('open');lucide.createIcons();}
+  pgRefresh();$('sheetScrimPG').classList.add('open');$('sheetPG').classList.add('open');lucide.createIcons();}
 function closePG(){$('sheetScrimPG').classList.remove('open');$('sheetPG').classList.remove('open');}
-function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.fournisseur===four&&(!f.paiement_id||(editingPG&&f.paiement_id===editingPG)));cands.sort((a,b)=>(a.date_facture||'').localeCompare(b.date_facture||''));
+function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.fournisseur===four&&fmode(f)===pgMode&&(!f.paiement_id||(editingPG&&f.paiement_id===editingPG)));cands.sort((a,b)=>(a.date_facture||'').localeCompare(b.date_facture||''));
   $('pg-list').innerHTML=cands.length?cands.map(f=>{const ch=editingPG&&f.paiement_id===editingPG;return '<label style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line2);cursor:pointer"><input type="checkbox" class="pgchk" data-id="'+f.id+'" data-m="'+f.montant+'" '+(ch?'checked':'')+' onchange="pgTotal()" style="width:20px;height:20px;accent-color:var(--red);flex:0 0 20px"><span style="flex:1;font-size:14px;font-weight:600">'+(f.reference?('N° '+f.reference):'Facture')+' <span style="color:var(--sub);font-weight:400">· '+frDate(f.date_facture)+'</span></span><span class="num" style="font-weight:700">'+fmt(f.montant)+' DH</span></label>';}).join('')
     :'<div style="padding:12px 0;color:var(--sub);font-size:13px">Aucune facture non réglée pour ce fournisseur.</div>';
   pgTotal();}
