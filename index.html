@@ -450,6 +450,7 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
       <div class="topbar center">
         <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
         <div class="title">Factures &amp; paiements</div>
+        <button class="iconbtn" onclick="openImport()" style="margin-right:8px"><i data-lucide="upload"></i></button>
         <button class="iconbtn" onclick="openFA()"><i data-lucide="plus"></i></button>
       </div>
       <div class="tabs" id="fptabs">
@@ -633,6 +634,21 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
       <button class="btn primary" onclick="savePG()">Enregistrer</button>
     </div>
     <div class="savehint"><i data-lucide="shield-check"></i><span>Synchronisé sur ton compte</span></div>
+  </div>
+
+  <!-- bottom sheet import factures -->
+  <div class="sheet-scrim" id="sheetScrimIMP" onclick="closeImport()"></div>
+  <div class="sheet" id="sheetIMP">
+    <div class="grip"></div>
+    <h3>Importer des factures</h3>
+    <p style="font-size:12.5px;color:var(--sub);margin:-4px 0 12px;line-height:1.4">Colle ton tableau : Date · N° · Fournisseur · Montant. Un format avec « | » ou tabulations fonctionne le mieux.</p>
+    <textarea id="imp-text" rows="7" placeholder="| 08/07/2026 | 01 260140795 | Maghreb Accessoires | 2 326,64 DH |" style="width:100%;border:1.5px solid var(--line);background:#FAFAFB;border-radius:13px;padding:12px;font-family:ui-monospace,monospace;font-size:12px;outline:none;resize:vertical"></textarea>
+    <button class="btn ghost" style="margin-top:12px" onclick="previewImport()"><i data-lucide="scan-line" style="width:17px;height:17px"></i>Analyser</button>
+    <div id="imp-preview" style="margin-top:14px"></div>
+    <div class="sheet-actions">
+      <button class="btn ghost" onclick="closeImport()">Annuler</button>
+      <button class="btn primary" id="imp-go" style="display:none" onclick="doImport()">Importer</button>
+    </div>
   </div>
 
 <!-- ADMIN MODAL -->
@@ -982,6 +998,45 @@ async function savePG(){const fournisseur=$('pg-four').value;const checked=[...d
   for(const f of cands){const link=checked.includes(f.id)?payId:null;if(f.paiement_id!==link){if(await dbUpdate('factures',f.id,{paiement_id:link}))f.paiement_id=link;}}
   closePG();renderFactures();}
 async function deletePG(){if(editingPG){for(const f of FA.filter(x=>x.paiement_id===editingPG)){if(await dbUpdate('factures',f.id,{paiement_id:null}))f.paiement_id=null;}if(await dbDelete('paiements',editingPG))PG=PG.filter(x=>x.id!==editingPG);}closePG();renderFactures();}
+
+/* --- import factures --- */
+let IMPROWS=[];
+function impMontant(s){s=(s||'').replace(/[^\d.,]/g,'');if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(','))s=s.replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;}
+function impDate(s){const m=(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(!m)return todayISO();let y=m[3];if(y.length===2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+function parseImport(text){const rows=[];(text||'').split(/\r?\n/).forEach(line=>{
+  if(!line.trim())return;
+  if(/fournisseur/i.test(line)&&/montant/i.test(line))return;
+  if(/^[\s|:\-]+$/.test(line))return;
+  let cells;
+  if(line.includes('|'))cells=line.split('|').map(c=>c.trim()).filter(c=>c!=='');
+  else if(line.includes('\t'))cells=line.split('\t').map(c=>c.trim()).filter(Boolean);
+  else cells=line.split(/\s{2,}/).map(c=>c.trim()).filter(Boolean);
+  if(cells.length<3)return;
+  const dateCell=cells.find(c=>/\d{1,2}\/\d{1,2}\/\d{2,4}/.test(c))||cells[0];
+  const montantCell=[...cells].reverse().find(c=>/\d/.test(c)&&/[,.]|dh/i.test(c))||cells[cells.length-1];
+  const montant=impMontant(montantCell);
+  if(!montant||montant<=0)return;
+  const rest=cells.filter(c=>c!==dateCell&&c!==montantCell);
+  let fournisseur='',reference='';
+  if(rest.length>=2){const score=c=>(c.match(/[A-Za-zÀ-ÿ]/g)||[]).length;const sorted=[...rest].sort((a,b)=>score(b)-score(a));fournisseur=sorted[0];reference=rest.filter(c=>c!==fournisseur).join(' ');}
+  else if(rest.length===1){fournisseur=rest[0];}
+  rows.push({date_facture:impDate(dateCell),reference,fournisseur:fournisseur||'(fournisseur)',montant});
+});return rows;}
+function openImport(){$('imp-text').value='';$('imp-preview').innerHTML='';$('imp-go').style.display='none';IMPROWS=[];$('sheetScrimIMP').classList.add('open');$('sheetIMP').classList.add('open');lucide.createIcons();}
+function closeImport(){$('sheetScrimIMP').classList.remove('open');$('sheetIMP').classList.remove('open');}
+function previewImport(){IMPROWS=parseImport($('imp-text').value);const box=$('imp-preview');
+  if(!IMPROWS.length){box.innerHTML='<div style="color:var(--red);font-size:13px;font-weight:600">Aucune facture détectée. Vérifie le format collé.</div>';$('imp-go').style.display='none';return;}
+  const total=IMPROWS.reduce((s,r)=>s+r.montant,0);const byF={};IMPROWS.forEach(r=>{byF[r.fournisseur]=(byF[r.fournisseur]||0)+r.montant;});
+  const brk=Object.keys(byF).map(f=>'<div class="kv"><span class="k">'+f+'</span><span class="v num">'+fmt(byF[f])+' DH</span></div>').join('');
+  box.innerHTML='<div class="card" style="padding:16px 18px"><div style="font-size:14px;font-weight:800;margin-bottom:8px">'+IMPROWS.length+' factures détectées · '+fmt(total)+' DH</div>'+brk+'</div>';
+  const go=$('imp-go');go.style.display='';go.textContent='Importer '+IMPROWS.length+' factures';lucide.createIcons();}
+async function doImport(){if(!IMPROWS.length)return;const go=$('imp-go');go.disabled=true;go.textContent='Import…';
+  const rows=IMPROWS.map(r=>Object.assign({user_id:me.id},r));
+  const {data,error}=await sb.from('factures').insert(rows).select();
+  go.disabled=false;
+  if(error){alert('Erreur import : '+error.message);go.textContent='Réessayer';return;}
+  FA=FA.concat(data||[]);closeImport();renderFactures();
+  alert((data?data.length:0)+' factures importées ✅');}
 
 /* ======================= DASHBOARD ======================= */
 function renderDashboard(){
