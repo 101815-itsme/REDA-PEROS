@@ -446,6 +446,20 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
     </section>
 
     <!-- PLACEHOLDERS -->
+    <section class="screen" id="s-factures">
+      <div class="topbar center">
+        <button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button>
+        <div class="title">Factures &amp; paiements</div>
+        <button class="iconbtn" onclick="openFA()"><i data-lucide="plus"></i></button>
+      </div>
+      <div class="tabs" id="fptabs">
+        <button class="on" data-t="factures">Factures</button>
+        <button data-t="paiements">Paiements</button>
+      </div>
+      <div id="fp-summary"></div>
+      <div id="fp-body"></div>
+    </section>
+
     <section class="screen" id="s-situation"><div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Situation financière</div><span class="spacer" style="max-width:40px"></span></div><div class="ph-screen"><i data-lucide="pie-chart"></i><h2>Situation financière</h2><p>Vue consolidée de tes trois activités. Bientôt interactive.</p></div></section>
     <section class="screen" id="s-calendrier"><div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Calendrier des échéances</div><span class="spacer" style="max-width:40px"></span></div><div class="ph-screen"><i data-lucide="calendar-days"></i><h2>Calendrier des échéances</h2><p>Tous tes chèques mois par mois. Bientôt interactif.</p></div></section>
     <section class="screen" id="s-documents"><div class="topbar center"><button class="iconbtn plain" onclick="openDrawer()"><i data-lucide="menu"></i></button><div class="title">Documents</div><span class="spacer" style="max-width:40px"></span></div><div class="ph-screen"><i data-lucide="folder"></i><h2>Documents</h2><p>Factures, CPS, bordereaux. Bientôt.</p></div></section>
@@ -474,6 +488,7 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
       <div class="ditem" data-s="creances"><i data-lucide="file-text"></i>Créances fournisseurs</div>
       <div class="ditem" data-s="marches"><i data-lucide="building-2"></i>Marchés publics</div>
       <div class="ditem" data-s="personnel"><i data-lucide="user"></i>Dépenses personnelles</div>
+      <div class="ditem" data-s="factures"><i data-lucide="receipt-text"></i>Factures &amp; paiements</div>
       <div class="ditem" data-s="situation"><i data-lucide="pie-chart"></i>Situation financière</div>
       <div class="ditem" data-s="calendrier"><i data-lucide="calendar-days"></i>Calendrier des échéances</div>
       <div class="ditem" data-s="documents"><i data-lucide="folder"></i>Documents</div>
@@ -583,6 +598,43 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
     <div class="savehint"><i data-lucide="shield-check"></i><span>Synchronisé sur ton compte</span></div>
   </div>
 
+  <!-- bottom sheet facture -->
+  <div class="sheet-scrim" id="sheetScrimFA" onclick="closeFA()"></div>
+  <div class="sheet" id="sheetFA">
+    <div class="grip"></div>
+    <h3 id="faTitle">Nouvelle facture</h3>
+    <div class="field"><label>Fournisseur</label><input id="fa-four" type="text" list="fa-fours" placeholder="Ex : Denso" autocomplete="off"><datalist id="fa-fours"></datalist></div>
+    <div class="field amt"><label>Montant total (DH)</label><input id="fa-montant" type="number" inputmode="decimal" placeholder="0"></div>
+    <div class="field"><label>Date de la facture</label><input id="fa-date" type="date"></div>
+    <div class="field"><label>N° de facture (facultatif)</label><input id="fa-ref" type="text" autocomplete="off" placeholder="Ex : FA2510-014"></div>
+    <div class="sheet-actions">
+      <button class="btn del" id="fa-del" style="display:none" onclick="deleteFA()"><i data-lucide="trash-2" style="width:18px;height:18px"></i></button>
+      <button class="btn ghost" onclick="closeFA()">Annuler</button>
+      <button class="btn primary" onclick="saveFA()">Enregistrer</button>
+    </div>
+    <div class="savehint"><i data-lucide="shield-check"></i><span>Synchronisé sur ton compte</span></div>
+  </div>
+
+  <!-- bottom sheet paiement groupé -->
+  <div class="sheet-scrim" id="sheetScrimPG" onclick="closePG()"></div>
+  <div class="sheet" id="sheetPG">
+    <div class="grip"></div>
+    <h3 id="pgTitle">Nouveau paiement</h3>
+    <div class="field"><label>Fournisseur</label><select id="pg-four" onchange="pgRenderList()" style="width:100%;border:1.5px solid var(--line);background:#FAFAFB;border-radius:13px;padding:14px 15px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none"></select></div>
+    <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin:4px 0 6px">Factures à régler</label>
+    <div id="pg-list"></div>
+    <div class="field" style="margin-top:14px"><label>Total du paiement</label><input id="pg-total" type="text" readonly style="font-weight:800;background:#F2F3F5"></div>
+    <div class="seg" id="pgModeSeg"><button class="on" data-mode="cheque">Chèque</button><button data-mode="espece">Espèces</button></div>
+    <div class="field" id="pg-chq-wrap"><label>N° de chèque</label><input id="pg-chq" type="text" inputmode="numeric" placeholder="Ex : 215491" autocomplete="off"></div>
+    <div class="field"><label>Date de paiement</label><input id="pg-date" type="date"></div>
+    <div class="sheet-actions">
+      <button class="btn del" id="pg-del" style="display:none" onclick="deletePG()"><i data-lucide="trash-2" style="width:18px;height:18px"></i></button>
+      <button class="btn ghost" onclick="closePG()">Annuler</button>
+      <button class="btn primary" onclick="savePG()">Enregistrer</button>
+    </div>
+    <div class="savehint"><i data-lucide="shield-check"></i><span>Synchronisé sur ton compte</span></div>
+  </div>
+
 <!-- ADMIN MODAL -->
 <div class="ascrim" id="admin-scrim" onclick="closeAdmin()"></div>
 <div class="amodal" id="admin-modal">
@@ -611,7 +663,7 @@ const TODAY=new Date(_now.getFullYear(),_now.getMonth(),_now.getDate());
 const todayISO=()=>_now.toISOString().slice(0,10);
 const PALETTE=['#D6001C','#14151C','#9AA0AA','#F17A8E','#F6B8C4','#F59E0B','#2563EB','#12A150','#7C3AED','#0EA5E9'];
 
-let R2=[],CR=[],MA=[],MV=[],PE=[];
+let R2=[],CR=[],MA=[],MV=[],PE=[],FA=[],PG=[];
 let PERSISTS=true;
 
 /* ======================= AUTH ======================= */
@@ -715,11 +767,12 @@ async function dbUpdate(table,id,fields){const {error}=await sb.from(table).upda
 async function dbDelete(table,id){const {error}=await sb.from(table).delete().eq('id',id);if(error){alert('Erreur : '+error.message);return false;}return true;}
 
 async function loadAllData(){
-  const [r,c,m,v,p]=await Promise.all([
+  const [r,c,m,v,p,fa,pg]=await Promise.all([
     sb.from('r2_ops').select('*'),sb.from('creances').select('*'),sb.from('marches').select('*'),
-    sb.from('mouvements').select('*'),sb.from('depenses_perso').select('*')
+    sb.from('mouvements').select('*'),sb.from('depenses_perso').select('*'),
+    sb.from('factures').select('*'),sb.from('paiements').select('*')
   ]);
-  R2=r.data||[];CR=c.data||[];MA=m.data||[];MV=v.data||[];PE=p.data||[];
+  R2=r.data||[];CR=c.data||[];MA=m.data||[];MV=v.data||[];PE=p.data||[];FA=fa.data||[];PG=pg.data||[];
 }
 
 async function enterApp(){
@@ -730,7 +783,7 @@ async function enterApp(){
   renderAll();
   showScreen('dashboard');
 }
-function renderAll(){renderDashboard();renderR2();renderCreances();renderMarches();renderPerso();lucide.createIcons();}
+function renderAll(){renderDashboard();renderR2();renderCreances();renderMarches();renderPerso();renderFactures();lucide.createIcons();}
 
 /* ======================= R2 OTO ======================= */
 const inRef=d=>{const x=new Date(d);return x.getFullYear()===REF.y&&(x.getMonth()+1)===REF.m;};
@@ -870,6 +923,66 @@ async function savePerso(){const categorie=$('pe-cat').value.trim()||'Autre';con
   closePerso();renderPerso();renderDashboard();}
 async function deletePerso(){if(editingPE&&await dbDelete('depenses_perso',editingPE))PE=PE.filter(x=>x.id!==editingPE);closePerso();renderPerso();renderDashboard();}
 
+/* ======================= FACTURES & PAIEMENTS ======================= */
+let fptab='factures';
+document.querySelectorAll('#fptabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#fptabs button').forEach(x=>x.classList.toggle('on',x===b));fptab=b.dataset.t;renderFactures();});
+function fournisseursDus(){const map={};FA.filter(f=>!f.paiement_id).forEach(f=>{const k=f.fournisseur||'(sans nom)';map[k]=(map[k]||0)+ +f.montant;});return map;}
+function renderFactures(){
+  const dl=$('fa-fours');if(dl)dl.innerHTML=[...new Set(FA.map(f=>f.fournisseur).filter(Boolean))].map(f=>'<option>'+f+'</option>').join('');
+  const dus=fournisseursDus();const totalDu=Object.values(dus).reduce((s,v)=>s+v,0);
+  const sum=$('fp-summary');if(!sum)return;
+  sum.innerHTML='<div class="totcard" style="margin-bottom:14px"><div class="l"><div class="k">TOTAL À PAYER (factures non réglées)</div><div class="v num">'+fmt(totalDu)+' DH</div></div></div>'
+    +(fptab==='factures'?'<button class="btn primary" style="margin-bottom:16px;gap:8px" onclick="openPG()"><i data-lucide="layers" style="width:17px;height:17px"></i>Regrouper des factures en paiement</button>':'');
+  const box=$('fp-body');
+  if(fptab==='factures'){
+    const items=FA.slice().sort((a,b)=>(b.date_facture||'').localeCompare(a.date_facture||''));
+    box.innerHTML=items.length?items.map(f=>{const paid=!!f.paiement_id;return '<div class="creance" onclick="openFA(\''+f.id+'\')"><div class="lg">'+initials(f.fournisseur)+'</div><div class="mid"><div class="sup">'+(f.fournisseur||'')+'</div><div class="chq">'+(f.reference?('N° '+f.reference+' · '):'')+frDate(f.date_facture)+'</div></div><div class="rt"><div class="amt num">'+fmt(f.montant)+' DH</div><div><span class="due '+(paid?'paid':'d12')+'">'+(paid?'Payée':'À payer')+'</span></div></div></div>';}).join('')
+      :'<div class="empty"><i data-lucide="file-text"></i><p>Aucune facture — appuie sur +</p></div>';
+  }else{
+    const items=PG.slice().sort((a,b)=>(b.date_paiement||'').localeCompare(a.date_paiement||''));
+    box.innerHTML=items.length?items.map(p=>{const n=FA.filter(f=>f.paiement_id===p.id).length;return '<div class="creance" onclick="openPG(\''+p.id+'\')"><div class="lg"><i data-lucide="'+(p.mode==='cheque'?'file-text':'banknote')+'" style="width:18px;height:18px"></i></div><div class="mid"><div class="sup">'+(p.fournisseur||'')+'</div><div class="chq">'+(p.mode==='cheque'?('Chèque N° '+(p.chq||'—')):'Espèces')+' · '+n+' facture'+(n>1?'s':'')+'</div></div><div class="rt"><div class="amt num">'+fmt(p.montant)+' DH</div><div class="date num">'+frDate(p.date_paiement)+'</div></div></div>';}).join('')
+      :'<div class="empty"><i data-lucide="wallet"></i><p>Aucun paiement enregistré</p></div>';
+  }
+  lucide.createIcons();
+}
+/* --- facture CRUD --- */
+let editingFA=null;
+function openFA(id){editingFA=(typeof id==='string')?id:null;const f=editingFA?FA.find(x=>x.id===editingFA):null;
+  $('faTitle').textContent=f?'Modifier la facture':'Nouvelle facture';$('fa-four').value=f?(f.fournisseur||''):'';$('fa-montant').value=f?f.montant:'';$('fa-date').value=f?(f.date_facture||todayISO()):todayISO();$('fa-ref').value=f?(f.reference||''):'';
+  $('fa-del').style.display=f?'':'none';$('sheetScrimFA').classList.add('open');$('sheetFA').classList.add('open');lucide.createIcons();}
+function closeFA(){$('sheetScrimFA').classList.remove('open');$('sheetFA').classList.remove('open');}
+async function saveFA(){const fournisseur=$('fa-four').value.trim()||'(fournisseur)';const montant=parseFloat($('fa-montant').value);const date_facture=$('fa-date').value||todayISO();const reference=$('fa-ref').value.trim();if(!montant||montant<=0){$('fa-montant').focus();return;}
+  const f={fournisseur,montant,date_facture,reference};
+  if(editingFA){if(await dbUpdate('factures',editingFA,f))Object.assign(FA.find(x=>x.id===editingFA),f);}
+  else{const row=await dbInsert('factures',f);if(row)FA.push(row);}
+  closeFA();renderFactures();}
+async function deleteFA(){if(editingFA&&await dbDelete('factures',editingFA))FA=FA.filter(x=>x.id!==editingFA);closeFA();renderFactures();}
+/* --- paiement groupé --- */
+let editingPG=null,pgMode='cheque';
+document.querySelectorAll('#pgModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');pgMode=b.dataset.mode;$('pg-chq-wrap').style.display=pgMode==='cheque'?'':'none';});
+function setPGMode(m){pgMode=m;document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));$('pg-chq-wrap').style.display=m==='cheque'?'':'none';}
+function openPG(id){editingPG=(typeof id==='string')?id:null;const p=editingPG?PG.find(x=>x.id===editingPG):null;
+  $('pgTitle').textContent=p?'Modifier le paiement':'Nouveau paiement';
+  const dus=fournisseursDus();let fours=Object.keys(dus);if(p&&p.fournisseur&&!fours.includes(p.fournisseur))fours.unshift(p.fournisseur);
+  $('pg-four').innerHTML=fours.length?fours.map(f=>'<option'+((p&&p.fournisseur===f)?' selected':'')+'>'+f+'</option>').join(''):'<option value="">(aucune facture à payer)</option>';
+  setPGMode(p?p.mode:'cheque');$('pg-chq').value=p?(p.chq||''):'';$('pg-date').value=p?(p.date_paiement||todayISO()):todayISO();$('pg-del').style.display=p?'':'none';
+  pgRenderList();$('sheetScrimPG').classList.add('open');$('sheetPG').classList.add('open');lucide.createIcons();}
+function closePG(){$('sheetScrimPG').classList.remove('open');$('sheetPG').classList.remove('open');}
+function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.fournisseur===four&&(!f.paiement_id||(editingPG&&f.paiement_id===editingPG)));cands.sort((a,b)=>(a.date_facture||'').localeCompare(b.date_facture||''));
+  $('pg-list').innerHTML=cands.length?cands.map(f=>{const ch=editingPG&&f.paiement_id===editingPG;return '<label style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line2);cursor:pointer"><input type="checkbox" class="pgchk" data-id="'+f.id+'" data-m="'+f.montant+'" '+(ch?'checked':'')+' onchange="pgTotal()" style="width:20px;height:20px;accent-color:var(--red);flex:0 0 20px"><span style="flex:1;font-size:14px;font-weight:600">'+(f.reference?('N° '+f.reference):'Facture')+' <span style="color:var(--sub);font-weight:400">· '+frDate(f.date_facture)+'</span></span><span class="num" style="font-weight:700">'+fmt(f.montant)+' DH</span></label>';}).join('')
+    :'<div style="padding:12px 0;color:var(--sub);font-size:13px">Aucune facture non réglée pour ce fournisseur.</div>';
+  pgTotal();}
+function pgTotal(){let t=0;document.querySelectorAll('.pgchk:checked').forEach(c=>t+=parseFloat(c.dataset.m));if($('pg-total'))$('pg-total').value=fmt(t)+' DH';return t;}
+async function savePG(){const fournisseur=$('pg-four').value;const checked=[...document.querySelectorAll('.pgchk:checked')].map(c=>c.dataset.id);if(!checked.length){alert('Sélectionne au moins une facture.');return;}
+  const montant=pgTotal(),mode=pgMode,chq=mode==='cheque'?$('pg-chq').value.trim():null,date_paiement=$('pg-date').value||todayISO();
+  const pdata={fournisseur,mode,chq,date_paiement,montant};let payId=editingPG;
+  if(editingPG){if(!await dbUpdate('paiements',editingPG,pdata))return;Object.assign(PG.find(x=>x.id===editingPG),pdata);}
+  else{const row=await dbInsert('paiements',pdata);if(!row)return;PG.push(row);payId=row.id;}
+  const cands=FA.filter(f=>f.fournisseur===fournisseur&&(!f.paiement_id||f.paiement_id===payId));
+  for(const f of cands){const link=checked.includes(f.id)?payId:null;if(f.paiement_id!==link){if(await dbUpdate('factures',f.id,{paiement_id:link}))f.paiement_id=link;}}
+  closePG();renderFactures();}
+async function deletePG(){if(editingPG){for(const f of FA.filter(x=>x.paiement_id===editingPG)){if(await dbUpdate('factures',f.id,{paiement_id:null}))f.paiement_id=null;}if(await dbDelete('paiements',editingPG))PG=PG.filter(x=>x.id!==editingPG);}closePG();renderFactures();}
+
 /* ======================= DASHBOARD ======================= */
 function renderDashboard(){
   const r2=r2Totals().gain;
@@ -905,7 +1018,7 @@ function showScreen(id){
   document.querySelectorAll('#ditems .ditem').forEach(d=>d.classList.toggle('on',d.dataset.s===id));
   const fab=$('fab');if(fab)fab.classList.toggle('show',id==='r2oto');
   $('body').scrollTop=0;closeDrawer();
-  if(id==='dashboard')renderDashboard();if(id==='r2oto')renderR2();if(id==='marches')renderMarches();if(id==='creances')renderCreances();if(id==='personnel')renderPerso();
+  if(id==='dashboard')renderDashboard();if(id==='r2oto')renderR2();if(id==='marches')renderMarches();if(id==='creances')renderCreances();if(id==='personnel')renderPerso();if(id==='factures')renderFactures();
   requestAnimationFrame(()=>{lucide.createIcons();reveal();});
 }
 function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');}
