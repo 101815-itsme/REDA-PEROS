@@ -208,9 +208,11 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
 @keyframes fabin{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
 
 /* bottom sheet */
-.sheet-scrim{position:absolute;inset:0;background:rgba(10,10,12,.45);opacity:0;visibility:hidden;transition:opacity .28s var(--ease),visibility .28s;z-index:30}
+.sheet-scrim{position:fixed;inset:0;background:rgba(10,10,12,.45);opacity:0;visibility:hidden;transition:opacity .28s var(--ease),visibility .28s;z-index:30}
 .sheet-scrim.open{opacity:1;visibility:visible}
-.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:26px 26px 0 0;transform:translateY(100%);transition:transform .34s var(--ease);z-index:31;padding:10px 20px calc(24px + env(safe-area-inset-bottom));max-width:440px;margin:0 auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-radius:26px 26px 0 0;transform:translateY(100%);transition:transform .34s var(--ease);z-index:31;padding:10px 20px calc(24px + env(safe-area-inset-bottom));max-width:440px;margin:0 auto;max-height:92dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sheet::-webkit-scrollbar{width:0}
+.sheet .grip{position:sticky;top:0;background:var(--card);z-index:2;padding-bottom:6px}
 .sheet.open{transform:none}
 .sheet .grip{width:38px;height:5px;border-radius:3px;background:#E2E4E8;margin:0 auto 16px}
 .sheet h3{font-size:18px;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
@@ -260,6 +262,27 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
 .aaddb{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:1.5px dashed var(--line);background:none;border-radius:12px;padding:12px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--sub);cursor:pointer;margin-top:2px}
 .aaddb i{width:16px;height:16px}
 . h2{}
+
+/* ===================== DESKTOP (≥ 900px) ===================== */
+@media (min-width:900px){
+  body{background:#ECECEE}
+  .app{max-width:none;width:100%;min-height:100dvh;flex-direction:row;box-shadow:none;overflow:hidden}
+  #nav{display:none!important}
+  .scrim{display:none!important}
+  .drawer{position:static!important;transform:none!important;order:0;flex:0 0 272px;width:272px;max-width:272px;height:100dvh;padding-bottom:0}
+  .drawer .items{padding:8px 14px 20px}
+  .body{order:1;flex:1;height:100dvh;max-height:100dvh;background:var(--bg)}
+  .screen{max-width:1080px;margin:0 auto;padding:24px 44px 70px}
+  .topbar{padding:24px 4px 20px;background:transparent}
+  .topbar > .iconbtn.plain:first-child{display:none}
+  .pagehead h1{font-size:28px}
+  .fab{right:44px;bottom:44px}
+  /* Dashboard : 3 cartes plus larges et aérées */
+  .trio{gap:16px}
+  /* listes et cartes profitent de la largeur */
+  .hero{padding:26px 30px 20px}
+}
+
 /* admin modal */
 .ascrim{position:fixed;inset:0;background:rgba(10,10,12,.5);opacity:0;visibility:hidden;transition:.28s;z-index:60}
 .ascrim.on{opacity:1;visibility:visible}
@@ -604,10 +627,18 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
   <div class="sheet" id="sheetFA">
     <div class="grip"></div>
     <h3 id="faTitle">Nouvelle facture</h3>
-    <div class="field"><label>Fournisseur</label><input id="fa-four" type="text" list="fa-fours" placeholder="Ex : Denso" autocomplete="off"><datalist id="fa-fours"></datalist></div>
+    <div class="field">
+      <label>Fournisseur</label>
+      <div style="position:relative">
+        <select id="fa-four-sel" onchange="faFourChange()" style="width:100%;border:1.5px solid var(--line);background:#FAFAFB;border-radius:13px;padding:14px 40px 14px 15px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);outline:none;-webkit-appearance:none;appearance:none;cursor:pointer"></select>
+        <i data-lucide="chevron-down" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--sub);pointer-events:none"></i>
+      </div>
+      <input id="fa-four-new" type="text" placeholder="Nom du nouveau fournisseur" autocomplete="off" style="display:none;margin-top:8px">
+      <input id="fa-four" type="hidden">
+    </div>
     <div class="field amt"><label>Montant total (DH)</label><input id="fa-montant" type="number" inputmode="decimal" placeholder="0"></div>
+    <div class="field"><label>N° de facture</label><input id="fa-ref" type="text" autocomplete="off" placeholder="Ex : 01 260145460"></div>
     <div class="field"><label>Date de la facture</label><input id="fa-date" type="date"></div>
-    <div class="field"><label>N° de facture (facultatif)</label><input id="fa-ref" type="text" autocomplete="off" placeholder="Ex : FA2510-014"></div>
     <label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin:2px 0 8px">Mode de paiement prévu</label>
     <div class="seg" id="faModeSeg" style="margin-bottom:4px"><button class="on" data-mode="cheque">Chèque</button><button data-mode="espece">Espèces</button></div>
     <div class="sheet-actions">
@@ -975,11 +1006,30 @@ function renderFactures(){
 let editingFA=null,faMode='cheque';
 document.querySelectorAll('#faModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#faModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');faMode=b.dataset.mode;});
 function setFAMode(m){faMode=m;document.querySelectorAll('#faModeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));}
+function faFillFournisseurs(current){
+  const fours=[...new Set(FA.map(f=>f.fournisseur).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  if(current&&!fours.includes(current))fours.unshift(current);
+  const opts=['<option value="" disabled'+(current?'':' selected')+'>— Choisir —</option>']
+    .concat(fours.map(f=>'<option value="'+f.replace(/"/g,'&quot;')+'"'+(f===current?' selected':'')+'>'+f+'</option>'))
+    .concat(['<option value="__new__">+ Nouveau fournisseur</option>']);
+  $('fa-four-sel').innerHTML=opts.join('');
+}
+function faFourChange(){const v=$('fa-four-sel').value;const nw=$('fa-four-new');
+  if(v==='__new__'){nw.style.display='';nw.focus();$('fa-four').value='';}
+  else{nw.style.display='none';$('fa-four').value=v;}}
 function openFA(id){editingFA=(typeof id==='string')?id:null;const f=editingFA?FA.find(x=>x.id===editingFA):null;
-  $('faTitle').textContent=f?'Modifier la facture':'Nouvelle facture';$('fa-four').value=f?(f.fournisseur||''):'';$('fa-montant').value=f?f.montant:'';$('fa-date').value=f?(f.date_facture||todayISO()):todayISO();$('fa-ref').value=f?(f.reference||''):'';setFAMode(f?(f.mode||'cheque'):'cheque');
+  $('faTitle').textContent=f?'Modifier la facture':'Nouvelle facture';
+  faFillFournisseurs(f?f.fournisseur:'');$('fa-four-new').style.display='none';$('fa-four-new').value='';$('fa-four').value=f?(f.fournisseur||''):'';
+  $('fa-montant').value=f?f.montant:'';$('fa-date').value=f?(f.date_facture||todayISO()):todayISO();$('fa-ref').value=f?(f.reference||''):'';setFAMode(f?(f.mode||'cheque'):'cheque');
   $('fa-del').style.display=f?'':'none';$('sheetScrimFA').classList.add('open');$('sheetFA').classList.add('open');lucide.createIcons();}
 function closeFA(){$('sheetScrimFA').classList.remove('open');$('sheetFA').classList.remove('open');}
-async function saveFA(){const fournisseur=$('fa-four').value.trim()||'(fournisseur)';const montant=parseFloat($('fa-montant').value);const date_facture=$('fa-date').value||todayISO();const reference=$('fa-ref').value.trim();if(!montant||montant<=0){$('fa-montant').focus();return;}
+async function saveFA(){
+  let fournisseur=$('fa-four-sel').value==='__new__'?$('fa-four-new').value.trim():$('fa-four').value.trim();
+  if(!fournisseur){alert('Choisis ou saisis un fournisseur.');return;}
+  const montant=parseFloat($('fa-montant').value);const date_facture=$('fa-date').value||todayISO();const reference=$('fa-ref').value.trim();
+  if(!montant||montant<=0){$('fa-montant').focus();return;}
+  if(reference){const dup=FA.find(x=>x.reference&&x.reference.trim()===reference&&x.id!==editingFA);
+    if(dup&&!confirm('⚠️ Une facture avec le n° « '+reference+' » existe déjà ('+dup.fournisseur+' · '+fmt(dup.montant)+' DH).\n\nL\'enregistrer quand même ?'))return;}
   const f={fournisseur,montant,date_facture,reference,mode:faMode};
   if(editingFA){if(await dbUpdate('factures',editingFA,f))Object.assign(FA.find(x=>x.id===editingFA),f);}
   else{const row=await dbInsert('factures',f);if(row)FA.push(row);}
@@ -1044,12 +1094,22 @@ function openImport(){$('imp-text').value='';$('imp-preview').innerHTML='';$('im
 function closeImport(){$('sheetScrimIMP').classList.remove('open');$('sheetIMP').classList.remove('open');}
 function previewImport(){IMPROWS=parseImport($('imp-text').value);const box=$('imp-preview');
   if(!IMPROWS.length){box.innerHTML='<div style="color:var(--red);font-size:13px;font-weight:600">Aucune facture détectée. Vérifie le format collé.</div>';$('imp-go').style.display='none';return;}
+  // marquer les doublons (n° déjà présent dans la base OU en double dans le collage)
+  const existing=new Set(FA.map(f=>(f.reference||'').trim()).filter(Boolean));
+  const seen=new Set();
+  IMPROWS.forEach(r=>{const ref=(r.reference||'').trim();r._dup=ref&&(existing.has(ref)||seen.has(ref));if(ref)seen.add(ref);});
+  const dups=IMPROWS.filter(r=>r._dup).length;
   const total=IMPROWS.reduce((s,r)=>s+r.montant,0);const byF={};IMPROWS.forEach(r=>{byF[r.fournisseur]=(byF[r.fournisseur]||0)+r.montant;});
   const brk=Object.keys(byF).map(f=>'<div class="kv"><span class="k">'+f+'</span><span class="v num">'+fmt(byF[f])+' DH</span></div>').join('');
-  box.innerHTML='<div class="card" style="padding:16px 18px"><div style="font-size:14px;font-weight:800;margin-bottom:8px">'+IMPROWS.length+' factures détectées · '+fmt(total)+' DH</div>'+brk+'</div>';
+  let warn='';
+  if(dups>0)warn='<div style="background:var(--red-soft);color:#B00018;font-size:12.5px;font-weight:700;padding:10px 13px;border-radius:11px;margin-bottom:10px">⚠️ '+dups+' facture'+(dups>1?'s':'')+' en double (n° déjà existant). <label style="display:block;font-weight:600;margin-top:6px"><input type="checkbox" id="imp-skipdup" checked style="accent-color:var(--red)"> Ignorer les doublons à l\'import</label></div>';
+  box.innerHTML=warn+'<div class="card" style="padding:16px 18px"><div style="font-size:14px;font-weight:800;margin-bottom:8px">'+IMPROWS.length+' factures détectées · '+fmt(total)+' DH</div>'+brk+'</div>';
   const go=$('imp-go');go.style.display='';go.textContent='Importer '+IMPROWS.length+' factures';lucide.createIcons();}
 async function doImport(){if(!IMPROWS.length)return;const go=$('imp-go');go.disabled=true;go.textContent='Import…';
-  const rows=IMPROWS.map(r=>Object.assign({user_id:me.id},r));
+  const skip=$('imp-skipdup')&&$('imp-skipdup').checked;
+  const list=skip?IMPROWS.filter(r=>!r._dup):IMPROWS;
+  if(!list.length){alert('Rien à importer (tous en doublon).');go.disabled=false;go.textContent='Importer';return;}
+  const rows=list.map(r=>{const o=Object.assign({user_id:me.id},r);delete o._dup;return o;});
   const {data,error}=await sb.from('factures').insert(rows).select();
   go.disabled=false;
   if(error){alert('Erreur import : '+error.message);go.textContent='Réessayer';return;}
