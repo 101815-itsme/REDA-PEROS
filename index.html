@@ -665,10 +665,11 @@ body{font-family:'Inter','Roboto',system-ui,-apple-system,sans-serif;background:
     <div style="background:#FFF7E6;border:1px solid #F3D38A;border-radius:12px;padding:10px 13px;margin:2px 0 10px;font-size:12.5px;color:#8a5b00;font-weight:600;display:flex;align-items:center;gap:7px"><i data-lucide="hand-pointer" style="width:15px;height:15px"></i>Coche uniquement les factures à inclure dans CE paiement.</div>
     <div id="pg-selinfo" style="font-size:12.5px;font-weight:700;color:var(--sub);margin:0 2px 8px">0 facture sélectionnée</div>
     <div id="pg-list"></div>
-    <div class="field" style="margin-top:14px"><label>Total du paiement</label><input id="pg-total" type="text" readonly style="font-weight:800;background:#F2F3F5"></div>
-    <div class="seg" id="pgModeSeg"><button class="on" data-mode="cheque">Chèque</button><button data-mode="espece">Espèces</button></div>
-    <div class="field" id="pg-chq-wrap"><label>N° de chèque</label><input id="pg-chq" type="text" inputmode="numeric" placeholder="Ex : 215491" autocomplete="off"></div>
-    <div class="field"><label>Date de paiement</label><input id="pg-date" type="date"></div>
+    <div class="field" style="margin-top:14px"><label>Total à régler</label><input id="pg-total" type="text" readonly style="font-weight:800;background:#F2F3F5"></div>
+    <label style="display:block;font-size:12px;font-weight:700;color:var(--sub);margin:6px 0 8px">Règlements (chèque / virement / espèces)</label>
+    <div id="pg-reglements"></div>
+    <button class="aaddb" style="margin-top:4px" onclick="addReglement()"><i data-lucide="plus"></i>Ajouter un règlement</button>
+    <div id="pg-balance" style="margin-top:12px;font-size:13.5px;font-weight:800;text-align:center;padding:11px;border-radius:12px"></div>
     <div class="sheet-actions">
       <button class="btn del" id="pg-del" style="display:none" onclick="deletePG()"><i data-lucide="trash-2" style="width:18px;height:18px"></i></button>
       <button class="btn ghost" onclick="closePG()">Annuler</button>
@@ -720,7 +721,7 @@ const TODAY=new Date(_now.getFullYear(),_now.getMonth(),_now.getDate());
 const todayISO=()=>_now.toISOString().slice(0,10);
 const PALETTE=['#D6001C','#14151C','#9AA0AA','#F17A8E','#F6B8C4','#F59E0B','#2563EB','#12A150','#7C3AED','#0EA5E9'];
 
-let R2=[],CR=[],MA=[],MV=[],PE=[],FA=[],PG=[];
+let R2=[],CR=[],MA=[],MV=[],PE=[],FA=[],PG=[],REG=[];
 let PERSISTS=true;
 
 /* ======================= AUTH ======================= */
@@ -824,12 +825,12 @@ async function dbUpdate(table,id,fields){const {error}=await sb.from(table).upda
 async function dbDelete(table,id){const {error}=await sb.from(table).delete().eq('id',id);if(error){alert('Erreur : '+error.message);return false;}return true;}
 
 async function loadAllData(){
-  const [r,c,m,v,p,fa,pg]=await Promise.all([
+  const [r,c,m,v,p,fa,pg,rg]=await Promise.all([
     sb.from('r2_ops').select('*'),sb.from('creances').select('*'),sb.from('marches').select('*'),
     sb.from('mouvements').select('*'),sb.from('depenses_perso').select('*'),
-    sb.from('factures').select('*'),sb.from('paiements').select('*')
+    sb.from('factures').select('*'),sb.from('paiements').select('*'),sb.from('reglements').select('*')
   ]);
-  R2=r.data||[];CR=c.data||[];MA=m.data||[];MV=v.data||[];PE=p.data||[];FA=fa.data||[];PG=pg.data||[];
+  R2=r.data||[];CR=c.data||[];MA=m.data||[];MV=v.data||[];PE=p.data||[];FA=fa.data||[];PG=pg.data||[];REG=rg.data||[];
 }
 
 async function enterApp(){
@@ -997,7 +998,7 @@ function renderFactures(){
       :'<div class="empty"><i data-lucide="file-text"></i><p>Aucune facture — appuie sur +</p></div>';
   }else{
     const items=PG.slice().sort((a,b)=>(b.date_paiement||'').localeCompare(a.date_paiement||''));
-    box.innerHTML=items.length?items.map(p=>{const n=FA.filter(f=>f.paiement_id===p.id).length;return '<div class="creance" onclick="openPG(\''+p.id+'\')"><div class="lg"><i data-lucide="'+(p.mode==='cheque'?'file-text':'banknote')+'" style="width:18px;height:18px"></i></div><div class="mid"><div class="sup">'+(p.fournisseur||'')+'</div><div class="chq">'+(p.mode==='cheque'?('Chèque N° '+(p.chq||'—')):'Espèces')+' · '+n+' facture'+(n>1?'s':'')+'</div></div><div class="rt"><div class="amt num">'+fmt(p.montant)+' DH</div><div class="date num">'+frDate(p.date_paiement)+'</div></div></div>';}).join('')
+    box.innerHTML=items.length?items.map(p=>{const n=FA.filter(f=>f.paiement_id===p.id).length;return '<div class="creance" onclick="openPG(\''+p.id+'\')"><div class="lg"><i data-lucide="wallet" style="width:18px;height:18px"></i></div><div class="mid"><div class="sup">'+(p.fournisseur||'')+'</div><div class="chq">'+(pgLabel(p.id)||RGTYPES[p.mode]||'Paiement')+' · '+n+' facture'+(n>1?'s':'')+'</div></div><div class="rt"><div class="amt num">'+fmt(p.montant)+' DH</div><div class="date num">'+frDate(p.date_paiement)+'</div></div></div>';}).join('')
       :'<div class="empty"><i data-lucide="wallet"></i><p>Aucun paiement enregistré</p></div>';
   }
   lucide.createIcons();
@@ -1035,37 +1036,70 @@ async function saveFA(){
   else{const row=await dbInsert('factures',f);if(row)FA.push(row);}
   closeFA();renderFactures();}
 async function deleteFA(){if(editingFA&&await dbDelete('factures',editingFA))FA=FA.filter(x=>x.id!==editingFA);closeFA();renderFactures();}
-/* --- paiement groupé --- */
-let editingPG=null,pgMode='cheque';
-document.querySelectorAll('#pgModeSeg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.remove('on'));b.classList.add('on');pgMode=b.dataset.mode;$('pg-chq-wrap').style.display=pgMode==='cheque'?'':'none';pgRefresh();});
-function setPGMode(m){pgMode=m;document.querySelectorAll('#pgModeSeg button').forEach(x=>x.classList.toggle('on',x.dataset.mode===m));$('pg-chq-wrap').style.display=m==='cheque'?'':'none';}
+/* --- paiement groupé (règlements multiples) --- */
+let editingPG=null;
 function fmode(f){return f.mode||'cheque';}
+const RGTYPES={cheque:'Chèque',espece:'Espèces',virement:'Virement'};
 function pgRefresh(){const p=editingPG?PG.find(x=>x.id===editingPG):null;const prev=$('pg-four').value;
-  let fours=[...new Set(FA.filter(f=>!f.paiement_id&&fmode(f)===pgMode).map(f=>f.fournisseur).filter(Boolean))];
+  let fours=[...new Set(FA.filter(f=>!f.paiement_id).map(f=>f.fournisseur).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   if(p&&p.fournisseur&&!fours.includes(p.fournisseur))fours.unshift(p.fournisseur);
   const keep=fours.includes(prev)?prev:(p?p.fournisseur:fours[0]);
-  const info=f=>{const list=FA.filter(x=>x.fournisseur===f&&!x.paiement_id&&fmode(x)===pgMode);const tot=list.reduce((s,x)=>s+ +x.montant,0);return list.length?(' — '+fmt(tot)+' DH · '+list.length+' fact.'):'';};
-  $('pg-four').innerHTML=fours.length?fours.map(f=>'<option value="'+f.replace(/"/g,'&quot;')+'"'+(f===keep?' selected':'')+'>'+f+info(f)+'</option>').join(''):'<option value="">(aucune facture '+(pgMode==='cheque'?'chèque':'espèces')+' à payer)</option>';
+  const info=f=>{const list=FA.filter(x=>x.fournisseur===f&&!x.paiement_id);const tot=list.reduce((s,x)=>s+ +x.montant,0);return list.length?(' — '+fmt(tot)+' DH · '+list.length+' fact.'):'';};
+  $('pg-four').innerHTML=fours.length?fours.map(f=>'<option value="'+f.replace(/"/g,'&quot;')+'"'+(f===keep?' selected':'')+'>'+f+info(f)+'</option>').join(''):'<option value="">(aucune facture à payer)</option>';
   pgRenderList();}
 function openPG(id){editingPG=(typeof id==='string')?id:null;const p=editingPG?PG.find(x=>x.id===editingPG):null;
-  $('pgTitle').textContent=p?'Modifier le paiement':'Nouveau paiement';
-  setPGMode(p?p.mode:'cheque');$('pg-chq').value=p?(p.chq||''):'';$('pg-date').value=p?(p.date_paiement||todayISO()):todayISO();$('pg-del').style.display=p?'':'none';
-  pgRefresh();$('sheetScrimPG').classList.add('open');$('sheetPG').classList.add('open');lucide.createIcons();}
+  $('pgTitle').textContent=p?'Modifier le paiement':'Nouveau paiement';$('pg-del').style.display=p?'':'none';
+  $('pg-reglements').innerHTML='';
+  if(p){const regs=REG.filter(r=>r.paiement_id===p.id);if(regs.length)regs.forEach(r=>addReglement(r));else addReglement();}
+  pgRefresh();
+  if(!editingPG&&!$('pg-reglements').children.length)addReglement();
+  $('sheetScrimPG').classList.add('open');$('sheetPG').classList.add('open');lucide.createIcons();}
 function closePG(){$('sheetScrimPG').classList.remove('open');$('sheetPG').classList.remove('open');}
-function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.fournisseur===four&&fmode(f)===pgMode&&(!f.paiement_id||(editingPG&&f.paiement_id===editingPG)));cands.sort((a,b)=>(a.date_facture||'').localeCompare(b.date_facture||''));
+function pgRenderList(){const four=$('pg-four').value;let cands=FA.filter(f=>f.fournisseur===four&&(!f.paiement_id||(editingPG&&f.paiement_id===editingPG)));cands.sort((a,b)=>(a.date_facture||'').localeCompare(b.date_facture||''));
   $('pg-list').innerHTML=cands.length?cands.map(f=>{const ch=editingPG&&f.paiement_id===editingPG;return '<label style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid var(--line2);cursor:pointer"><input type="checkbox" class="pgchk" data-id="'+f.id+'" data-m="'+f.montant+'" '+(ch?'checked':'')+' onchange="pgTotal()" style="width:20px;height:20px;accent-color:var(--red);flex:0 0 20px"><span style="flex:1;font-size:14px;font-weight:600">'+(f.reference?('N° '+f.reference):'Facture')+' <span style="color:var(--sub);font-weight:400">· '+frDate(f.date_facture)+'</span></span><span class="num" style="font-weight:700">'+fmt(f.montant)+' DH</span></label>';}).join('')
     :'<div style="padding:12px 0;color:var(--sub);font-size:13px">Aucune facture non réglée pour ce fournisseur.</div>';
   pgTotal();}
-function pgTotal(){let t=0,n=0;document.querySelectorAll('.pgchk:checked').forEach(c=>{t+=parseFloat(c.dataset.m);n++;});if($('pg-total'))$('pg-total').value=fmt(t)+' DH';const si=$('pg-selinfo');if(si){si.textContent=n+' facture'+(n>1?'s':'')+' sélectionnée'+(n>1?'s':'')+(n?' · '+fmt(t)+' DH':'');si.style.color=n?'var(--red)':'var(--sub)';}return t;}
+function pgTotal(){let t=0,n=0;document.querySelectorAll('.pgchk:checked').forEach(c=>{t+=parseFloat(c.dataset.m);n++;});if($('pg-total'))$('pg-total').value=fmt(t)+' DH';const si=$('pg-selinfo');if(si){si.textContent=n+' facture'+(n>1?'s':'')+' sélectionnée'+(n>1?'s':'')+(n?' · '+fmt(t)+' DH':'');si.style.color=n?'var(--red)':'var(--sub)';}rgRecalc();return t;}
+/* règlements */
+function addReglement(r){const box=$('pg-reglements');const d=document.createElement('div');d.className='rgline';d.style.cssText='border:1.5px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px';
+  const type=r?r.type:'cheque';const isEsp=type==='espece';
+  d.innerHTML='<div style="display:flex;gap:8px;align-items:center">'
+    +'<select class="rg-type" onchange="rgTypeChange(this)" style="flex:1;border:1.5px solid var(--line);background:#FAFAFB;border-radius:10px;padding:10px;font-family:inherit;font-weight:600;font-size:13.5px;outline:none">'
+    +'<option value="cheque"'+(type==='cheque'?' selected':'')+'>Chèque</option><option value="virement"'+(type==='virement'?' selected':'')+'>Virement</option><option value="espece"'+(type==='espece'?' selected':'')+'>Espèces</option></select>'
+    +'<button type="button" onclick="this.closest(\'.rgline\').remove();rgRecalc()" style="width:38px;height:38px;flex:0 0 38px;border:1.5px solid var(--line);background:#fff;border-radius:10px;color:var(--red);cursor:pointer"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button></div>'
+    +'<input class="rg-ref" placeholder="N° chèque / réf. virement" value="'+(r&&r.reference?String(r.reference).replace(/"/g,'&quot;'):'')+'" style="display:'+(isEsp?'none':'block')+';width:100%;margin-top:8px;border:1.5px solid var(--line);background:#FAFAFB;border-radius:10px;padding:10px;font-family:inherit;font-weight:600;font-size:13.5px;outline:none">'
+    +'<div style="display:flex;gap:8px;margin-top:8px">'
+    +'<input class="rg-montant" type="number" inputmode="decimal" placeholder="Montant" value="'+(r?r.montant:'')+'" oninput="rgRecalc()" style="flex:1;border:1.5px solid var(--line);background:#FAFAFB;border-radius:10px;padding:10px;font-family:inherit;font-weight:700;font-size:13.5px;outline:none">'
+    +'<input class="rg-date" type="date" value="'+(r&&r.date_reglement?r.date_reglement:todayISO())+'" style="flex:1;border:1.5px solid var(--line);background:#FAFAFB;border-radius:10px;padding:10px;font-family:inherit;font-weight:600;font-size:13px;outline:none"></div>';
+  box.appendChild(d);
+  if(!r){const rem=pgTotal()-rgSum();const mi=d.querySelector('.rg-montant');if(rem>0)mi.value=Math.round(rem*100)/100;}
+  lucide.createIcons();rgRecalc();}
+function rgTypeChange(sel){const line=sel.closest('.rgline');line.querySelector('.rg-ref').style.display=sel.value==='espece'?'none':'block';}
+function rgSum(){let s=0;document.querySelectorAll('#pg-reglements .rg-montant').forEach(i=>{const v=parseFloat(i.value);if(!isNaN(v))s+=v;});return s;}
+function rgRecalc(){const target=(()=>{let t=0;document.querySelectorAll('.pgchk:checked').forEach(c=>t+=parseFloat(c.dataset.m));return t;})();
+  const s=rgSum();const b=$('pg-balance');if(!b)return;const diff=Math.round((target-s)*100)/100;
+  if(target<=0){b.style.background='#F2F3F5';b.style.color='var(--sub)';b.textContent='Sélectionne des factures';return;}
+  if(Math.abs(diff)<0.01){b.style.background='var(--green-soft)';b.style.color='var(--green)';b.textContent='✓ Réglé '+fmt(s)+' / '+fmt(target)+' DH';}
+  else if(diff>0){b.style.background='var(--orange-soft)';b.style.color='#9a5b00';b.textContent='Il manque '+fmt(diff)+' DH ('+fmt(s)+' / '+fmt(target)+')';}
+  else{b.style.background='var(--red-soft)';b.style.color='#B00018';b.textContent='Trop de '+fmt(-diff)+' DH ('+fmt(s)+' / '+fmt(target)+')';}}
+function collectReglements(){const out=[];document.querySelectorAll('#pg-reglements .rgline').forEach(l=>{const type=l.querySelector('.rg-type').value;const reference=type==='espece'?'':l.querySelector('.rg-ref').value.trim();const montant=parseFloat(l.querySelector('.rg-montant').value);const date_reglement=l.querySelector('.rg-date').value||todayISO();if(montant&&montant>0)out.push({type,reference,montant,date_reglement});});return out;}
+function pgLabel(pid){const regs=REG.filter(r=>r.paiement_id===pid);if(!regs.length)return '';const by={};regs.forEach(r=>{by[r.type]=(by[r.type]||0)+1;});return Object.keys(by).map(t=>by[t]+' '+(RGTYPES[t]||t).toLowerCase()+(by[t]>1&&t==='cheque'?'s':by[t]>1&&t==='virement'?'s':'')).join(' · ');}
 async function savePG(){const fournisseur=$('pg-four').value;const checked=[...document.querySelectorAll('.pgchk:checked')].map(c=>c.dataset.id);if(!checked.length){alert('Sélectionne au moins une facture.');return;}
-  const montant=pgTotal(),mode=pgMode,chq=mode==='cheque'?$('pg-chq').value.trim():null,date_paiement=$('pg-date').value||todayISO();
-  const pdata={fournisseur,mode,chq,date_paiement,montant};let payId=editingPG;
-  if(editingPG){if(!await dbUpdate('paiements',editingPG,pdata))return;Object.assign(PG.find(x=>x.id===editingPG),pdata);}
+  const target=pgTotal();const regs=collectReglements();
+  if(!regs.length){alert('Ajoute au moins un règlement (chèque, virement ou espèces).');return;}
+  const s=regs.reduce((a,r)=>a+r.montant,0);
+  if(Math.abs(target-s)>=0.01){alert('Le total des règlements ('+fmt(s)+' DH) doit égaler le total des factures ('+fmt(target)+' DH).');return;}
+  const types=[...new Set(regs.map(r=>r.type))];const mode=types.length>1?'mixte':types[0];
+  const date_paiement=regs.map(r=>r.date_reglement).sort().slice(-1)[0]||todayISO();
+  const pdata={fournisseur,mode,chq:null,date_paiement,montant:target};let payId=editingPG;
+  if(editingPG){if(!await dbUpdate('paiements',editingPG,pdata))return;Object.assign(PG.find(x=>x.id===editingPG),pdata);
+    for(const r of REG.filter(x=>x.paiement_id===editingPG))await dbDelete('reglements',r.id);REG=REG.filter(x=>x.paiement_id!==editingPG);}
   else{const row=await dbInsert('paiements',pdata);if(!row)return;PG.push(row);payId=row.id;}
+  for(const r of regs){const row=await dbInsert('reglements',Object.assign({paiement_id:payId},r));if(row)REG.push(row);}
   const cands=FA.filter(f=>f.fournisseur===fournisseur&&(!f.paiement_id||f.paiement_id===payId));
   for(const f of cands){const link=checked.includes(f.id)?payId:null;if(f.paiement_id!==link){if(await dbUpdate('factures',f.id,{paiement_id:link}))f.paiement_id=link;}}
   closePG();renderFactures();}
-async function deletePG(){if(editingPG){for(const f of FA.filter(x=>x.paiement_id===editingPG)){if(await dbUpdate('factures',f.id,{paiement_id:null}))f.paiement_id=null;}if(await dbDelete('paiements',editingPG))PG=PG.filter(x=>x.id!==editingPG);}closePG();renderFactures();}
+async function deletePG(){if(editingPG){for(const f of FA.filter(x=>x.paiement_id===editingPG)){if(await dbUpdate('factures',f.id,{paiement_id:null}))f.paiement_id=null;}if(await dbDelete('paiements',editingPG)){PG=PG.filter(x=>x.id!==editingPG);REG=REG.filter(x=>x.paiement_id!==editingPG);}}closePG();renderFactures();}
 
 /* --- import factures --- */
 let IMPROWS=[];
